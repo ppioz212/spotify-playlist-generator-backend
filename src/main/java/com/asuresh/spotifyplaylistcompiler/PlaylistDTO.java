@@ -1,15 +1,26 @@
 package com.asuresh.spotifyplaylistcompiler;
 
-public class PlaylistDTO {
-    private PlaylistTypeEnum typeOfPlaylist;
-    private String nameOfPlaylist;
+import java.util.List;
 
-    public PlaylistTypeEnum getTypeOfPlaylist() {
-        return typeOfPlaylist;
+public class PlaylistDTO {
+    private List<String> playlistsToAdd;
+    private String nameOfPlaylist;
+    private boolean addLikedSongs;
+
+    public List<String> getPlaylistsToAdd() {
+        return playlistsToAdd;
     }
 
-    public void setTypeOfPlaylist(PlaylistTypeEnum typeOfPlaylist) {
-        this.typeOfPlaylist = typeOfPlaylist;
+    public void setPlaylistsToAdd(List<String> playlistsToAdd) {
+        this.playlistsToAdd = playlistsToAdd;
+    }
+
+    public boolean isAddLikedSongs() {
+        return addLikedSongs;
+    }
+
+    public void setAddLikedSongs(boolean addLikedSongs) {
+        this.addLikedSongs = addLikedSongs;
     }
 
     public String getNameOfPlaylist() {
