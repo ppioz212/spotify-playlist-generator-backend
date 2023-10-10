@@ -2,42 +2,42 @@ package com.asuresh.spotifyplaylistcompiler;
 
 public class SpotifyPlaylistObject {
 
-    private String playlistId;
-    private String playlistName;
-    private PlaylistTypeEnum playlistType;
-    private String playlistOwner;
+    private String id;
+    private String name;
+    private PlaylistTypeEnum type;
+    private String owner;
     private String imageLink;
 
-    public String getPlaylistId() {
-        return playlistId;
+    public String getId() {
+        return id;
     }
 
-    public void setPlaylistId(String playlistId) {
-        this.playlistId = playlistId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getPlaylistName() {
-        return playlistName;
+    public String getName() {
+        return name;
     }
 
-    public void setPlaylistName(String playlistName) {
-        this.playlistName = playlistName;
+    public void setName(String name) {
+        this.name = name;
     }
 
-    public PlaylistTypeEnum getPlaylistType() {
-        return playlistType;
+    public PlaylistTypeEnum getType() {
+        return type;
     }
 
-    public void setPlaylistType(PlaylistTypeEnum playlistType) {
-        this.playlistType = playlistType;
+    public void setType(PlaylistTypeEnum type) {
+        this.type = type;
     }
 
-    public String getPlaylistOwner() {
-        return playlistOwner;
+    public String getOwner() {
+        return owner;
     }
 
-    public void setPlaylistOwner(String playlistOwner) {
-        this.playlistOwner = playlistOwner;
+    public void setOwner(String owner) {
+        this.owner = owner;
     }
 
     public String getImageLink() {
