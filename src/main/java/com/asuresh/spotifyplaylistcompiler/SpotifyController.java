@@ -38,19 +38,18 @@ public class SpotifyController {
         Gson gson = new Gson();
 
         List<String> finalTrackIdsToAdd = new ArrayList<>();
-        List<String> playlistTrackIds = new ArrayList<>();
-        List<String> albumTrackIds = new ArrayList<>();
+
         if (!playlistObject.getPlaylistsToAdd().isEmpty()) {
-            playlistTrackIds = compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
+            List<String> playlistTrackIds = compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
             finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd,playlistTrackIds));
         }
         if (!playlistObject.getAlbumsToAdd().isEmpty()) {
-            albumTrackIds = compileAlbumTrackIds(playlistObject.getAlbumsToAdd(), accessToken);
+            List<String> albumTrackIds = compileAlbumTrackIds(playlistObject.getAlbumsToAdd(), accessToken);
             finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd,albumTrackIds));
         }
         if (playlistObject.isAddLikedSongs()) {
             List<String> savedSongsTrackIds = compileUserSavedSongIds(accessToken);
-            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(savedSongsTrackIds, playlistTrackIds));
+            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd, savedSongsTrackIds));
         }
         String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
         addTrackItemsToNewPlaylist(accessToken, newPlaylistId, finalTrackIdsToAdd);
