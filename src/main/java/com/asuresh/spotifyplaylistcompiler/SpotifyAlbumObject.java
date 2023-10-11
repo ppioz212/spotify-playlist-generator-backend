@@ -1,16 +1,18 @@
 package com.asuresh.spotifyplaylistcompiler;
 
-import java.util.List;
-
 public class SpotifyAlbumObject {
 
     private String name;
     private String id;
-    private List<String> artist;
+    private String artists;
     private String imageLink;
 
-    public void setArtist(List<String> artist) {
-        this.artist = artist;
+    public String getArtists() {
+        return artists;
+    }
+
+    public void setArtists(String artists) {
+        this.artists = artists;
     }
 
     public String getName() {

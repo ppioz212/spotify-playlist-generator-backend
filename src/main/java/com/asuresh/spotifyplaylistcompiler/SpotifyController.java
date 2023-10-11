@@ -141,12 +141,16 @@ public class SpotifyController {
 
                     JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
                     SpotifyAlbumObject currAlbum = new SpotifyAlbumObject();
-                    List<String> artists = new ArrayList<>();
-                    JSONArray artistsJSONData = (albumData.getJSONArray("artists"));
-                    for (int j = 0; j < artistsJSONData.length(); j++) {
-                        artists.add(artistsJSONData.getJSONObject(j).getString("name"));
+                    StringBuilder sb = new StringBuilder();
+                    JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
+                    for (int j = 0; j < artistsJSONArray.length(); j++) {
+                        if (j == artistsJSONArray.length() - 1) {
+                            sb.append(artistsJSONArray.getJSONObject(j).getString("name"));
+                            continue;
+                        }
+                        sb.append(artistsJSONArray.getJSONObject(j).getString("name")).append(", ");
                     }
-                    currAlbum.setArtist(artists);
+                    currAlbum.setArtists(sb.toString());
                     currAlbum.setId(albumData.getString("id"));
                     currAlbum.setName(albumData.getString("name"));
                     albums.add(currAlbum);
