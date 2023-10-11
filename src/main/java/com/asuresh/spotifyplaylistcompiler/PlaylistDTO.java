@@ -4,8 +4,18 @@ import java.util.List;
 
 public class PlaylistDTO {
     private List<String> playlistsToAdd;
+    private List<String> albumsToAdd;
+
     private String nameOfPlaylist;
     private boolean addLikedSongs;
+
+    public List<String> getAlbumsToAdd() {
+        return albumsToAdd;
+    }
+
+    public void setAlbumsToAdd(List<String> albumsToAdd) {
+        this.albumsToAdd = albumsToAdd;
+    }
 
     public List<String> getPlaylistsToAdd() {
         return playlistsToAdd;

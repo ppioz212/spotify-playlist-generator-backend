@@ -37,16 +37,23 @@ public class SpotifyController {
         OkHttpClient client = new OkHttpClient();
         Gson gson = new Gson();
 
-        List<String> finalTrackIdsToAdd;
-        List<String> playlistTrackIds = compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
-        String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
+        List<String> finalTrackIdsToAdd = new ArrayList<>();
+        List<String> playlistTrackIds = new ArrayList<>();
+        List<String> albumTrackIds = new ArrayList<>();
+        if (!playlistObject.getPlaylistsToAdd().isEmpty()) {
+            playlistTrackIds = compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
+            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd,playlistTrackIds));
+        }
+        if (!playlistObject.getAlbumsToAdd().isEmpty()) {
+            albumTrackIds = compileAlbumTrackIds(playlistObject.getAlbumsToAdd(), accessToken);
+            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd,albumTrackIds));
+        }
         if (playlistObject.isAddLikedSongs()) {
             List<String> savedSongsTrackIds = compileUserSavedSongIds(accessToken);
             finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(savedSongsTrackIds, playlistTrackIds));
-            addTrackItemsToNewPlaylist(accessToken, newPlaylistId, finalTrackIdsToAdd);
-        } else {
-            addTrackItemsToNewPlaylist(accessToken, newPlaylistId, playlistTrackIds);
         }
+        String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
+        addTrackItemsToNewPlaylist(accessToken, newPlaylistId, finalTrackIdsToAdd);
         return newPlaylistId;
     }
 
@@ -102,7 +109,6 @@ public class SpotifyController {
         return playlists;
     }
 
-    //TODO: Use this to return all albums followed and use similar logic as playlists (identicall)
     @GetMapping("/getAlbums")
     public static List<SpotifyAlbumObject> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         Gson gson = new Gson();
@@ -129,16 +135,16 @@ public class SpotifyController {
                 } else {
                     albumUrl = obj.getString("next");
                 }
-                System.out.println("The total number of playlists avaiable is: " + obj.getInt("total"));
+                System.out.println("The total number of albums avaiable is: " + obj.getInt("total"));
                 JSONArray albumItems = obj.getJSONArray("items");
                 for (int i = 0; i < albumItems.length(); i++) {
 
                     JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
                     SpotifyAlbumObject currAlbum = new SpotifyAlbumObject();
-                    List<String > artists = new ArrayList<>();
+                    List<String> artists = new ArrayList<>();
                     JSONArray artistsJSONData = (albumData.getJSONArray("artists"));
                     for (int j = 0; j < artistsJSONData.length(); j++) {
-                        artists.add(artistsJSONData.getString(i));
+                        artists.add(artistsJSONData.getJSONObject(j).getString("name"));
                     }
                     currAlbum.setArtist(artists);
                     currAlbum.setId(albumData.getString("id"));
@@ -149,6 +155,49 @@ public class SpotifyController {
         }
         return albums;
     }
+
+    public static List<String> compileAlbumTrackIds(List<String> playlistIds, String accessToken) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+
+        List<String> albumTracks = new ArrayList<>();
+        for (String albumID : playlistIds) {
+            String albumTracksUrl = "https://api.spotify.com/v1/albums/" + albumID + "/tracks?limit=50";
+            boolean shouldRunRequestAgain = true;
+            while (shouldRunRequestAgain) {
+                Request request = new Request.Builder()
+                        .url(albumTracksUrl)
+                        .header("Authorization", "Bearer " + accessToken)
+                        .build();
+
+                try (Response response = client.newCall(request).execute()) {
+                    if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+                    assert response.body() != null;
+                    String jsonOutput = response.body().string();
+                    JSONObject obj = new JSONObject(jsonOutput);
+                    if (obj.isNull("next")) {
+                        shouldRunRequestAgain = false;
+                    } else {
+                        albumTracksUrl = obj.getString("next");
+                    }
+                    JSONArray albumItems = obj.getJSONArray("items");
+                    for (int i = 0; i < albumItems.length(); i++) {
+                        if (albumItems.getJSONObject(i).getString("id") == null) {
+                            continue;
+                        }
+                        if (!(albumTracks.contains(albumItems.getJSONObject(i).getString("id")))) {
+                            albumTracks.add(albumItems.getJSONObject(i).getString("id"));
+                        }
+                        if (i % 10 == 0) {
+                            System.out.println(albumItems.getJSONObject(i).getString("name"));
+                        }
+
+                    }
+                }
+            }
+        }
+        return albumTracks;
+    }
+
     public static void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
