@@ -92,7 +92,7 @@ public class SpotifyController {
                     currPlaylist.setOwner(playlistOwner.getString("id"));
                     currPlaylist.setId(playlistItemData.getString("id"));
                     currPlaylist.setName(playlistItemData.getString("name"));
-
+// hello
                     if (currPlaylist.getOwner().equals(userId)) {
                         currPlaylist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
                     } else {
