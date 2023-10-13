@@ -27,7 +27,31 @@ public class SpotifyController {
 
     @PostMapping("/getAccessToken")
     public SpotifyToken getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) {
-        return generateToken(generatedCode);
+        OkHttpClient client = new OkHttpClient();
+        Gson gson = new Gson();
+
+        String authHeader = clientID + ":" + secretClientID;
+        String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
+
+        RequestBody formBody = new FormBody.Builder()
+                .add("grant_type", "authorization_code")
+                .add("code", generatedCode)
+                .add("redirect_uri", redirectUri)
+                .build();
+
+        Request request = new Request.Builder()
+                .url("https://accounts.spotify.com/api/token")
+                .post(formBody)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Authorization", "Basic " + encodedString)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            return gson.fromJson(response.body().string(), SpotifyToken.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
 
@@ -92,7 +116,7 @@ public class SpotifyController {
                     currPlaylist.setOwner(playlistOwner.getString("id"));
                     currPlaylist.setId(playlistItemData.getString("id"));
                     currPlaylist.setName(playlistItemData.getString("name"));
-// hello
+
                     if (currPlaylist.getOwner().equals(userId)) {
                         currPlaylist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
                     } else {
@@ -110,10 +134,7 @@ public class SpotifyController {
 
     @GetMapping("/getAlbums")
     public static List<SpotifyAlbumObject> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
-        Gson gson = new Gson();
-        String userId = getUserId(accessToken);
         OkHttpClient client = new OkHttpClient();
-
         List<SpotifyAlbumObject> albums = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
@@ -190,10 +211,6 @@ public class SpotifyController {
                         if (!(albumTracks.contains(albumItems.getJSONObject(i).getString("id")))) {
                             albumTracks.add(albumItems.getJSONObject(i).getString("id"));
                         }
-                        if (i % 10 == 0) {
-                            System.out.println(albumItems.getJSONObject(i).getString("name"));
-                        }
-
                     }
                 }
             }
@@ -340,33 +357,5 @@ public class SpotifyController {
             jsonOutput = response.body().string();
         }
         return new JSONObject(jsonOutput).getString("id");
-    }
-
-    public static SpotifyToken generateToken(String generatedCode) {
-        OkHttpClient client = new OkHttpClient();
-        Gson gson = new Gson();
-
-        String authHeader = clientID + ":" + secretClientID;
-        String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
-
-        RequestBody formBody = new FormBody.Builder()
-                .add("grant_type", "authorization_code")
-                .add("code", generatedCode)
-                .add("redirect_uri", redirectUri)
-                .build();
-
-        Request request = new Request.Builder()
-                .url("https://accounts.spotify.com/api/token")
-                .post(formBody)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Authorization", "Basic " + encodedString)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            assert response.body() != null;
-            return gson.fromJson(response.body().string(), SpotifyToken.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 }

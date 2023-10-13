@@ -23,6 +23,7 @@ dependencies {
 	implementation("com.squareup.okhttp3:okhttp:4.11.0")
 	implementation("com.google.code.gson:gson:2.10.1")
 	implementation("org.json:json:20230618")
+	implementation("org.postgresql:postgresql:42.6.0")
 }
 
 tasks.withType<Test> {
