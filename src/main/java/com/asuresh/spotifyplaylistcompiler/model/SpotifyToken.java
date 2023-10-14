@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.model;
 
 public class SpotifyToken {
     private String access_token;

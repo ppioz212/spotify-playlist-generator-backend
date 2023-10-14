@@ -1,6 +1,6 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.model;
 
-public class SpotifyAlbumObject {
+public class SpotifyAlbum {
 
     private String name;
     private String id;

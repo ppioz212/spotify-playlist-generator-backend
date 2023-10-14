@@ -1,6 +1,8 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.model;
 
-public class SpotifyPlaylistObject {
+import com.asuresh.spotifyplaylistcompiler.PlaylistTypeEnum;
+
+public class SpotifyPlaylist {
 
     private String id;
     private String name;

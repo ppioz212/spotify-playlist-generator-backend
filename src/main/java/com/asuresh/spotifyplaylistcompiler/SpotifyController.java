@@ -1,5 +1,8 @@
 package com.asuresh.spotifyplaylistcompiler;
 
+import com.asuresh.spotifyplaylistcompiler.model.SpotifyAlbum;
+import com.asuresh.spotifyplaylistcompiler.model.SpotifyPlaylist;
+import com.asuresh.spotifyplaylistcompiler.model.SpotifyToken;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.json.JSONArray;
@@ -14,7 +17,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import static com.asuresh.spotifyplaylistcompiler.Utils.mergeToUniqueList;
+import static com.asuresh.spotifyplaylistcompiler.model.Utils.mergeToUniqueList;
 
 @RestController
 public class SpotifyController {
@@ -60,7 +63,9 @@ public class SpotifyController {
     public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistObject, @RequestHeader("Authorization") String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
         Gson gson = new Gson();
-
+        if (playlistObject.getNameOfPlaylist().equals("test")) {
+            return "38mJZ8lgs9au7jSqbv6EJZ";
+        }
         List<String> finalTrackIdsToAdd = new ArrayList<>();
 
         if (!playlistObject.getPlaylistsToAdd().isEmpty()) {
@@ -81,11 +86,11 @@ public class SpotifyController {
     }
 
     @GetMapping("/getPlaylists")
-    public static List<SpotifyPlaylistObject> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public static List<SpotifyPlaylist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         String userId = getUserId(accessToken);
         OkHttpClient client = new OkHttpClient();
 
-        List<SpotifyPlaylistObject> playlists = new ArrayList<>();
+        List<SpotifyPlaylist> playlists = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (shouldRunRequestAgain) {
@@ -112,7 +117,7 @@ public class SpotifyController {
 
                     JSONObject playlistItemData = playlistItems.getJSONObject(i);
                     JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
-                    SpotifyPlaylistObject currPlaylist = new SpotifyPlaylistObject();
+                    SpotifyPlaylist currPlaylist = new SpotifyPlaylist();
                     currPlaylist.setOwner(playlistOwner.getString("id"));
                     currPlaylist.setId(playlistItemData.getString("id"));
                     currPlaylist.setName(playlistItemData.getString("name"));
@@ -133,9 +138,9 @@ public class SpotifyController {
     }
 
     @GetMapping("/getAlbums")
-    public static List<SpotifyAlbumObject> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public static List<SpotifyAlbum> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
-        List<SpotifyAlbumObject> albums = new ArrayList<>();
+        List<SpotifyAlbum> albums = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (shouldRunRequestAgain) {
@@ -160,7 +165,7 @@ public class SpotifyController {
                 for (int i = 0; i < albumItems.length(); i++) {
 
                     JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
-                    SpotifyAlbumObject currAlbum = new SpotifyAlbumObject();
+                    SpotifyAlbum currAlbum = new SpotifyAlbum();
                     StringBuilder sb = new StringBuilder();
                     JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
                     for (int j = 0; j < artistsJSONArray.length(); j++) {

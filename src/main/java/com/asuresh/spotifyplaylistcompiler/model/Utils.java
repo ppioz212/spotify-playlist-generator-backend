@@ -1,10 +1,11 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.model;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Scanner;
 
 public class Utils {
@@ -15,6 +16,16 @@ public class Utils {
             }
         }
         return new ArrayList<>(listOne);
+    }
+
+    public static List<String> addUniqueStringToList(List<String> list, String item) {
+        if (list.size() == 0) {
+            return new ArrayList<>();
+        }
+        if (!list.contains(item)) {
+            list.add(item);
+        }
+        return new ArrayList<>(list);
     }
     public static String getInput (String message) {
         System.out.println(message);
