@@ -1,5 +1,7 @@
 package com.asuresh.spotifyplaylistcompiler.model;
 
+import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
+
 public class Playlist {
 
     private String id;
@@ -7,6 +9,14 @@ public class Playlist {
     private PlaylistTypeEnum type;
     private String owner;
     private String imageLink;
+
+    public Playlist() {}
+
+    public Playlist(String id, String name, String owner) {
+        this.id = id;
+        this.name = name;
+        this.owner = owner;
+    }
 
     public String getId() {
         return id;

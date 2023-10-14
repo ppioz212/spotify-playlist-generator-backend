@@ -1,14 +1,13 @@
-package com.asuresh.spotifyplaylistcompiler.model;
+package com.asuresh.spotifyplaylistcompiler.Utils;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Scanner;
 
-public class Utils {
+public class MiscFunctions {
     public static List<String> mergeToUniqueList(List<String> listOne, List<String> listTwo) {
         for (String item: listTwo) {
             if (!listOne.contains(item)) {

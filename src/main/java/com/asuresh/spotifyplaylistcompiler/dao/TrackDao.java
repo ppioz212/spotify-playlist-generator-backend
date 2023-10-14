@@ -14,7 +14,7 @@ public class TrackDao {
     }
 
     public void createTrack(Track track) {
-        String sql = "INSERT INTO playlist (id, namer) VALUES (?, ?) ON CONFLICT (id) " +
+        String sql = "INSERT INTO track (id, name) VALUES (?, ?) ON CONFLICT (id) " +
                 "DO UPDATE SET name = ? RETURNING id;";
         jdbcTemplate.queryForObject(sql, String.class, track.getId(), track.getName(), track.getName());
     }

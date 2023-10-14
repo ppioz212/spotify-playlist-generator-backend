@@ -2,10 +2,18 @@ package com.asuresh.spotifyplaylistcompiler.model;
 
 public class Album {
 
-    private String name;
     private String id;
+    private String name;
     private String artists;
     private String imageLink;
+
+    public Album() {}
+
+    public Album(String id, String name, String artists) {
+        this.id = id;
+        this.name = name;
+        this.artists = artists;
+    }
 
     public String getArtists() {
         return artists;

@@ -1,5 +1,6 @@
 package com.asuresh.spotifyplaylistcompiler.app;
 
+import com.asuresh.spotifyplaylistcompiler.dao.TrackDao;
 import com.asuresh.spotifyplaylistcompiler.model.PlaylistTypeEnum;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
@@ -21,17 +22,17 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
-import static com.asuresh.spotifyplaylistcompiler.model.Utils.mergeToUniqueList;
+import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.mergeToUniqueList;
 
 @RestController
 public class Controller {
     public static final MediaType JSON = MediaType.get("application/json");
-    static final private String ACCESS_TOKEN_FILENAME = "accessTokenInfo.txt";
     static String clientID = "1dbfd19797084691bbd011cab62cb6a6";
     static String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
     static String redirectUri = "http://localhost:3000";
     AlbumDao albumDao;
     PlaylistDao playlistDao;
+    TrackDao trackDao;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -40,6 +41,7 @@ public class Controller {
         dataSource.setPassword("postgres1");
         albumDao = new AlbumDao(dataSource);
         playlistDao = new PlaylistDao(dataSource);
+        trackDao = new TrackDao(dataSource);
     }
 
     @PostMapping("/generateNewPlaylist")
