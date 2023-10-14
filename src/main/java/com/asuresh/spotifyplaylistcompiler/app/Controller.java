@@ -100,11 +100,8 @@ public class Controller {
 
                     JSONObject playlistItemData = playlistItems.getJSONObject(i);
                     JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
-                    Playlist currPlaylist = new Playlist();
-                    currPlaylist.setOwner(playlistOwner.getString("id"));
-                    currPlaylist.setId(playlistItemData.getString("id"));
-                    currPlaylist.setName(playlistItemData.getString("name"));
-
+                    Playlist currPlaylist = new Playlist(playlistItemData.getString("id"),
+                            playlistItemData.getString("name"), playlistOwner.getString("id"));
                     if (currPlaylist.getOwner().equals(userId)) {
                         currPlaylist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
                     } else {
@@ -146,7 +143,6 @@ public class Controller {
                 for (int i = 0; i < albumItems.length(); i++) {
 
                     JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
-                    Album currAlbum = new Album();
                     StringBuilder sb = new StringBuilder();
                     JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
                     for (int j = 0; j < artistsJSONArray.length(); j++) {
@@ -156,9 +152,8 @@ public class Controller {
                         }
                         sb.append(artistsJSONArray.getJSONObject(j).getString("name")).append(", ");
                     }
-                    currAlbum.setArtists(sb.toString());
-                    currAlbum.setId(albumData.getString("id"));
-                    currAlbum.setName(albumData.getString("name"));
+                    Album currAlbum = new Album(albumData.getString("id"),
+                            albumData.getString("name"), sb.toString());
                     albums.add(currAlbum);
                     albumDao.createAlbum(currAlbum);
                 }
@@ -308,6 +303,26 @@ public class Controller {
         return playlistTracks;
     }
 
+    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+
+        RequestBody body = RequestBody.create("{\n    \"name\": \"" + newPlaylistName + "\",\n    \"description\": \"" + newPlaylistDescription + "\",\n    \"public\": false\n}", JSON);
+        Request request = new Request.Builder()
+                .url("https://api.spotify.com/v1/me/playlists")
+                .post(body)
+                .header("Authorization",  "Bearer " + accessToken)
+                .header("Content-Type", "application/json")
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+            assert response.body() != null;
+            String jsonOutput = response.body().string();
+            JSONObject obj = new JSONObject(jsonOutput);
+            return obj.getString("id");
+        }
+    }
+
     public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
@@ -337,26 +352,6 @@ public class Controller {
                 if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
                 assert response.body() != null;
             }
-        }
-    }
-
-    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
-        RequestBody body = RequestBody.create("{\n    \"name\": \"" + newPlaylistName + "\",\n    \"description\": \"" + newPlaylistDescription + "\",\n    \"public\": false\n}", JSON);
-        Request request = new Request.Builder()
-                .url("https://api.spotify.com/v1/me/playlists")
-                .post(body)
-                .header("Authorization",  "Bearer " + accessToken)
-                .header("Content-Type", "application/json")
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-            assert response.body() != null;
-            String jsonOutput = response.body().string();
-            JSONObject obj = new JSONObject(jsonOutput);
-            return obj.getString("id");
         }
     }
 
