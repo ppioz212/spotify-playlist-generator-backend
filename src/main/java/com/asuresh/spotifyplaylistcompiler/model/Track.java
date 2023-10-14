@@ -1,10 +1,11 @@
 package com.asuresh.spotifyplaylistcompiler.model;
 
 public class Track {
-    private String name;
     private String id;
+    private String name;
 
-    public Track(String name, String id) {
+
+    public Track(String id, String name) {
         this.name = name;
         this.id = id;
     }

@@ -1,6 +1,6 @@
 package com.asuresh.spotifyplaylistcompiler.model;
 
-public class SpotifyToken {
+public class Token {
     private String access_token;
     private String token_type;
     private float expires_in;

@@ -10,9 +10,9 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
         DataSourceAutoConfiguration.class,
 }
 )
-public class SpotifyPlaylistCompilerApplication {
+public class Application {
 
     public static void main(String[] args) {
-        SpringApplication.run(SpotifyPlaylistCompilerApplication.class, args);
+        SpringApplication.run(Application.class, args);
     }
 }

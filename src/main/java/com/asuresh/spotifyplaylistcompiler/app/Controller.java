@@ -3,9 +3,9 @@ package com.asuresh.spotifyplaylistcompiler.app;
 import com.asuresh.spotifyplaylistcompiler.model.PlaylistTypeEnum;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
-import com.asuresh.spotifyplaylistcompiler.model.SpotifyAlbum;
-import com.asuresh.spotifyplaylistcompiler.model.SpotifyPlaylist;
-import com.asuresh.spotifyplaylistcompiler.model.SpotifyToken;
+import com.asuresh.spotifyplaylistcompiler.model.Album;
+import com.asuresh.spotifyplaylistcompiler.model.Playlist;
+import com.asuresh.spotifyplaylistcompiler.model.Token;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -24,7 +24,7 @@ import java.util.List;
 import static com.asuresh.spotifyplaylistcompiler.model.Utils.mergeToUniqueList;
 
 @RestController
-public class SpotifyController {
+public class Controller {
     public static final MediaType JSON = MediaType.get("application/json");
     static final private String ACCESS_TOKEN_FILENAME = "accessTokenInfo.txt";
     static String clientID = "1dbfd19797084691bbd011cab62cb6a6";
@@ -33,7 +33,7 @@ public class SpotifyController {
     AlbumDao albumDao;
     PlaylistDao playlistDao;
 
-    SpotifyController() {
+    Controller() {
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setUsername("postgres");
         dataSource.setUrl("jdbc:postgresql://localhost:5432/spotifyData");
@@ -42,37 +42,6 @@ public class SpotifyController {
         playlistDao = new PlaylistDao(dataSource);
     }
 
-    @PostMapping("/getAccessToken")
-    public SpotifyToken getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) {
-        OkHttpClient client = new OkHttpClient();
-        Gson gson = new Gson();
-
-        String authHeader = clientID + ":" + secretClientID;
-        String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
-
-        RequestBody formBody = new FormBody.Builder()
-                .add("grant_type", "authorization_code")
-                .add("code", generatedCode)
-                .add("redirect_uri", redirectUri)
-                .build();
-
-        Request request = new Request.Builder()
-                .url("https://accounts.spotify.com/api/token")
-                .post(formBody)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Authorization", "Basic " + encodedString)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            assert response.body() != null;
-            return gson.fromJson(response.body().string(), SpotifyToken.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-
-    //comment example
     @PostMapping("/generateNewPlaylist")
     public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistObject, @RequestHeader("Authorization") String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
@@ -100,11 +69,11 @@ public class SpotifyController {
     }
 
     @GetMapping("/getPlaylists")
-    public List<SpotifyPlaylist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         String userId = getUserId(accessToken);
         OkHttpClient client = new OkHttpClient();
 
-        List<SpotifyPlaylist> playlists = new ArrayList<>();
+        List<Playlist> playlists = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (shouldRunRequestAgain) {
@@ -124,14 +93,12 @@ public class SpotifyController {
                 } else {
                     playlistUrl = obj.getString("next");
                 }
-                System.out.println("The total number of playlists avaiable is: " + obj.getInt("total"));
                 JSONArray playlistItems = obj.getJSONArray("items");
-                int totalTracks = 0;
                 for (int i = 0; i < playlistItems.length(); i++) {
 
                     JSONObject playlistItemData = playlistItems.getJSONObject(i);
                     JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
-                    SpotifyPlaylist currPlaylist = new SpotifyPlaylist();
+                    Playlist currPlaylist = new Playlist();
                     currPlaylist.setOwner(playlistOwner.getString("id"));
                     currPlaylist.setId(playlistItemData.getString("id"));
                     currPlaylist.setName(playlistItemData.getString("name"));
@@ -143,9 +110,7 @@ public class SpotifyController {
                     }
                     playlists.add(currPlaylist);
                     playlistDao.createPlaylist(currPlaylist);
-                    totalTracks += playlistItemData.getJSONObject("tracks").getInt("total");
                 }
-                System.out.println("Raw number of tracks = " + totalTracks);
 
             }
         }
@@ -153,9 +118,9 @@ public class SpotifyController {
     }
 
     @GetMapping("/getAlbums")
-    public List<SpotifyAlbum> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
-        List<SpotifyAlbum> albums = new ArrayList<>();
+        List<Album> albums = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (shouldRunRequestAgain) {
@@ -175,12 +140,11 @@ public class SpotifyController {
                 } else {
                     albumUrl = obj.getString("next");
                 }
-                System.out.println("The total number of albums avaiable is: " + obj.getInt("total"));
                 JSONArray albumItems = obj.getJSONArray("items");
                 for (int i = 0; i < albumItems.length(); i++) {
 
                     JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
-                    SpotifyAlbum currAlbum = new SpotifyAlbum();
+                    Album currAlbum = new Album();
                     StringBuilder sb = new StringBuilder();
                     JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
                     for (int j = 0; j < artistsJSONArray.length(); j++) {
@@ -199,6 +163,35 @@ public class SpotifyController {
             }
         }
         return albums;
+    }
+
+    @PostMapping("/getAccessToken")
+    public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) {
+        OkHttpClient client = new OkHttpClient();
+        Gson gson = new Gson();
+
+        String authHeader = clientID + ":" + secretClientID;
+        String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
+
+        RequestBody formBody = new FormBody.Builder()
+                .add("grant_type", "authorization_code")
+                .add("code", generatedCode)
+                .add("redirect_uri", redirectUri)
+                .build();
+
+        Request request = new Request.Builder()
+                .url("https://accounts.spotify.com/api/token")
+                .post(formBody)
+                .header("Content-Type", "application/x-www-form-urlencoded")
+                .header("Authorization", "Basic " + encodedString)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            assert response.body() != null;
+            return gson.fromJson(response.body().string(), Token.class);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<String> compileAlbumTrackIds(List<String> playlistIds, String accessToken) throws IOException {
@@ -239,57 +232,7 @@ public class SpotifyController {
         return albumTracks;
     }
 
-    public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
-        OkHttpClient client = new OkHttpClient();
 
-        int numberOfTimesToAddTracks = trackIdsToAdd.size() / 98 + 1;
-        int j = 0;
-        for (int i = 0; i < numberOfTimesToAddTracks; i++) {
-            JSONArray trackListURIs = new JSONArray();
-            for (; j < trackIdsToAdd.size(); j++) {
-                trackListURIs.put("spotify:track:" + trackIdsToAdd.get(j));
-                if (j % 98 == 0 && j != 0) {
-                    j++;
-                    break;
-                }
-            }
-            JSONObject finalTrackListURis = new JSONObject();
-            finalTrackListURis.put("uris", trackListURIs);
-
-            RequestBody body = RequestBody.create(String.valueOf(finalTrackListURis), JSON);
-            Request request = new Request.Builder()
-                    .url("https://api.spotify.com/v1/playlists/" + newPlaylistId + "/tracks")
-                    .post(body)
-                    .header("Authorization", "Bearer " + accessToken)
-                    .header("Content-Type", "application/json")
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                assert response.body() != null;
-            }
-        }
-    }
-
-    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
-        RequestBody body = RequestBody.create("{\n    \"name\": \"" + newPlaylistName + "\",\n    \"description\": \"" + newPlaylistDescription + "\",\n    \"public\": false\n}", JSON);
-        Request request = new Request.Builder()
-                .url("https://api.spotify.com/v1/me/playlists")
-                .post(body)
-                .header("Authorization",  "Bearer " + accessToken)
-                .header("Content-Type", "application/json")
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-            assert response.body() != null;
-            String jsonOutput = response.body().string();
-            JSONObject obj = new JSONObject(jsonOutput);
-            return obj.getString("id");
-        }
-    }
     public List<String> compileUserSavedSongIds(String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
@@ -361,6 +304,58 @@ public class SpotifyController {
             }
         }
         return playlistTracks;
+    }
+
+    public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+
+        int numberOfTimesToAddTracks = trackIdsToAdd.size() / 98 + 1;
+        int j = 0;
+        for (int i = 0; i < numberOfTimesToAddTracks; i++) {
+            JSONArray trackListURIs = new JSONArray();
+            for (; j < trackIdsToAdd.size(); j++) {
+                trackListURIs.put("spotify:track:" + trackIdsToAdd.get(j));
+                if (j % 98 == 0 && j != 0) {
+                    j++;
+                    break;
+                }
+            }
+            JSONObject finalTrackListURis = new JSONObject();
+            finalTrackListURis.put("uris", trackListURIs);
+
+            RequestBody body = RequestBody.create(String.valueOf(finalTrackListURis), JSON);
+            Request request = new Request.Builder()
+                    .url("https://api.spotify.com/v1/playlists/" + newPlaylistId + "/tracks")
+                    .post(body)
+                    .header("Authorization", "Bearer " + accessToken)
+                    .header("Content-Type", "application/json")
+                    .build();
+
+            try (Response response = client.newCall(request).execute()) {
+                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+                assert response.body() != null;
+            }
+        }
+    }
+
+    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
+        OkHttpClient client = new OkHttpClient();
+
+        RequestBody body = RequestBody.create("{\n    \"name\": \"" + newPlaylistName + "\",\n    \"description\": \"" + newPlaylistDescription + "\",\n    \"public\": false\n}", JSON);
+        Request request = new Request.Builder()
+                .url("https://api.spotify.com/v1/me/playlists")
+                .post(body)
+                .header("Authorization",  "Bearer " + accessToken)
+                .header("Content-Type", "application/json")
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+            assert response.body() != null;
+            String jsonOutput = response.body().string();
+            JSONObject obj = new JSONObject(jsonOutput);
+            return obj.getString("id");
+        }
     }
 
     public String getUserId(String accessToken) throws IOException {

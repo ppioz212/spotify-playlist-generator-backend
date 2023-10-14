@@ -1,6 +1,6 @@
 package com.asuresh.spotifyplaylistcompiler.model;
 
-public class SpotifyPlaylist {
+public class Playlist {
 
     private String id;
     private String name;
