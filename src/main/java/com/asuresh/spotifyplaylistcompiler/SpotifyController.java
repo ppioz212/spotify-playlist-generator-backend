@@ -1,10 +1,13 @@
 package com.asuresh.spotifyplaylistcompiler;
 
+import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
+import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
 import com.asuresh.spotifyplaylistcompiler.model.SpotifyAlbum;
 import com.asuresh.spotifyplaylistcompiler.model.SpotifyPlaylist;
 import com.asuresh.spotifyplaylistcompiler.model.SpotifyToken;
 import com.google.gson.Gson;
 import okhttp3.*;
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -26,7 +29,17 @@ public class SpotifyController {
     static String clientID = "1dbfd19797084691bbd011cab62cb6a6";
     static String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
     static String redirectUri = "http://localhost:3000";
+    AlbumDao albumDao;
+    PlaylistDao playlistDao;
 
+    SpotifyController() {
+        BasicDataSource dataSource = new BasicDataSource();
+        dataSource.setUsername("postgres");
+        dataSource.setUrl("jdbc:postgresql://localhost:5432/spotifyData");
+        dataSource.setPassword("postgres1");
+        albumDao = new AlbumDao(dataSource);
+        playlistDao = new PlaylistDao(dataSource);
+    }
 
     @PostMapping("/getAccessToken")
     public SpotifyToken getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) {
@@ -86,7 +99,7 @@ public class SpotifyController {
     }
 
     @GetMapping("/getPlaylists")
-    public static List<SpotifyPlaylist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public List<SpotifyPlaylist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         String userId = getUserId(accessToken);
         OkHttpClient client = new OkHttpClient();
 
@@ -128,6 +141,7 @@ public class SpotifyController {
                         currPlaylist.setType(PlaylistTypeEnum.ALL_FOLLOWED_PLAYLISTS);
                     }
                     playlists.add(currPlaylist);
+                    playlistDao.createPlaylist(currPlaylist);
                     totalTracks += playlistItemData.getJSONObject("tracks").getInt("total");
                 }
                 System.out.println("Raw number of tracks = " + totalTracks);
@@ -138,7 +152,7 @@ public class SpotifyController {
     }
 
     @GetMapping("/getAlbums")
-    public static List<SpotifyAlbum> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public List<SpotifyAlbum> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
         List<SpotifyAlbum> albums = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
@@ -179,13 +193,14 @@ public class SpotifyController {
                     currAlbum.setId(albumData.getString("id"));
                     currAlbum.setName(albumData.getString("name"));
                     albums.add(currAlbum);
+                    albumDao.createAlbum(currAlbum);
                 }
             }
         }
         return albums;
     }
 
-    public static List<String> compileAlbumTrackIds(List<String> playlistIds, String accessToken) throws IOException {
+    public List<String> compileAlbumTrackIds(List<String> playlistIds, String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         List<String> albumTracks = new ArrayList<>();
@@ -223,7 +238,7 @@ public class SpotifyController {
         return albumTracks;
     }
 
-    public static void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
+    public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         int numberOfTimesToAddTracks = trackIdsToAdd.size() / 98 + 1;
@@ -255,7 +270,7 @@ public class SpotifyController {
         }
     }
 
-    public static String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
+    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         RequestBody body = RequestBody.create("{\n    \"name\": \"" + newPlaylistName + "\",\n    \"description\": \"" + newPlaylistDescription + "\",\n    \"public\": false\n}", JSON);
@@ -274,7 +289,7 @@ public class SpotifyController {
             return obj.getString("id");
         }
     }
-    public static List<String> compileUserSavedSongIds(String accessToken) throws IOException {
+    public List<String> compileUserSavedSongIds(String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         List<String> savedSongIds = new ArrayList<>();
@@ -307,7 +322,7 @@ public class SpotifyController {
         }
         return savedSongIds;
     }
-    public static List<String> compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
+    public List<String> compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         List<String> playlistTracks = new ArrayList<>();
@@ -347,7 +362,7 @@ public class SpotifyController {
         return playlistTracks;
     }
 
-    public static String getUserId(String accessToken) throws IOException {
+    public String getUserId(String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
         Request request = new Request.Builder()
