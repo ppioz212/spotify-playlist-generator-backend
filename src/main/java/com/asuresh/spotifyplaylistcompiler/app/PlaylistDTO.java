@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.app;
 
 import java.util.List;
 

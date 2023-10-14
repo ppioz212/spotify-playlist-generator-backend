@@ -1,5 +1,6 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.app;
 
+import com.asuresh.spotifyplaylistcompiler.model.PlaylistTypeEnum;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
 import com.asuresh.spotifyplaylistcompiler.model.SpotifyAlbum;

@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.app;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;

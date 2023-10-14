@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.model;
 
 public enum PlaylistTypeEnum {
     ALL_USER_CREATED("ALL_USER_CREATED"),

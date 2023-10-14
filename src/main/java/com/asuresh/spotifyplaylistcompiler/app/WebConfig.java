@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler;
+package com.asuresh.spotifyplaylistcompiler.app;
 
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
