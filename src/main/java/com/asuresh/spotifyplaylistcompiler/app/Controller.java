@@ -1,12 +1,9 @@
 package com.asuresh.spotifyplaylistcompiler.app;
 
 import com.asuresh.spotifyplaylistcompiler.dao.TrackDao;
-import com.asuresh.spotifyplaylistcompiler.model.PlaylistTypeEnum;
+import com.asuresh.spotifyplaylistcompiler.model.*;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
-import com.asuresh.spotifyplaylistcompiler.model.Album;
-import com.asuresh.spotifyplaylistcompiler.model.Playlist;
-import com.asuresh.spotifyplaylistcompiler.model.Token;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.apache.commons.dbcp2.BasicDataSource;
@@ -22,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 
+import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.addUniqueStringToList;
 import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.mergeToUniqueList;
 
 @RestController
@@ -30,9 +28,9 @@ public class Controller {
     static String clientID = "1dbfd19797084691bbd011cab62cb6a6";
     static String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
     static String redirectUri = "http://localhost:3000";
-    AlbumDao albumDao;
-    PlaylistDao playlistDao;
-    TrackDao trackDao;
+    private final AlbumDao albumDao;
+    private final PlaylistDao playlistDao;
+    private final TrackDao trackDao;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -219,9 +217,11 @@ public class Controller {
                         if (albumItems.getJSONObject(i).getString("id") == null) {
                             continue;
                         }
-                        if (!(albumTracks.contains(albumItems.getJSONObject(i).getString("id")))) {
-                            albumTracks.add(albumItems.getJSONObject(i).getString("id"));
-                        }
+                        Track track = new Track(albumItems.getJSONObject(i).getString("id"),
+                                albumItems.getJSONObject(i).getString("name"));
+                        albumTracks = addUniqueStringToList(albumTracks,track.getId());
+                        trackDao.createTrack(track);
+                        albumDao.addAlbumToTrack(albumID,track.getId());
                     }
                 }
             }
@@ -233,7 +233,7 @@ public class Controller {
     public List<String> compileUserSavedSongIds(String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
-        List<String> savedSongIds = new ArrayList<>();
+        List<String> savedTrackIds = new ArrayList<>();
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
         boolean shouldRunRequestAgain = true;
         while (shouldRunRequestAgain) {
@@ -255,13 +255,14 @@ public class Controller {
                 JSONArray savedSongsItems = obj.getJSONArray("items");
                 for (int i = 0; i < savedSongsItems.length(); i++) {
                     JSONObject playlistItemsData = savedSongsItems.getJSONObject(i);
-                    if (!(savedSongIds.contains(playlistItemsData.getJSONObject("track").getString("id")))) {
-                        savedSongIds.add(playlistItemsData.getJSONObject("track").getString("id"));
-                    }
+                    Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
+                            playlistItemsData.getJSONObject("track").getString("name"));
+                    savedTrackIds = addUniqueStringToList(savedTrackIds,track.getId());
+                    trackDao.createTrack(track);
                 }
             }
         }
-        return savedSongIds;
+        return savedTrackIds;
     }
     public List<String> compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
         OkHttpClient client = new OkHttpClient();
@@ -293,9 +294,11 @@ public class Controller {
                                 (playlistItemsData.keySet().contains("episode"))) {
                             continue;
                         }
-                        if (!(playlistTracks.contains(playlistItemsData.getJSONObject("track").getString("id")))) {
-                            playlistTracks.add(playlistItemsData.getJSONObject("track").getString("id"));
-                        }
+                        Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
+                                playlistItemsData.getJSONObject("track").getString("name"), true);
+                        playlistTracks = addUniqueStringToList(playlistTracks,track.getId());
+                        trackDao.createTrack(track);
+                        playlistDao.addPlaylistToTrack(playlistID, track.getId());
                     }
                 }
             }

@@ -18,7 +18,7 @@ public class MiscFunctions {
     }
 
     public static List<String> addUniqueStringToList(List<String> list, String item) {
-        if (list.size() == 0) {
+        if (list == null) {
             return new ArrayList<>();
         }
         if (!list.contains(item)) {

@@ -17,4 +17,8 @@ public class PlaylistDao {
                 "DO UPDATE SET name = ? RETURNING id;";
         jdbcTemplate.queryForObject(sql, String.class, playlist.getId(), playlist.getName(), playlist.getOwner(), playlist.getName());
     }
+    public void addPlaylistToTrack(String playlistID, String trackID) {
+        String sql = "INSERT INTO playlist_track (playlist_id, track_id) VALUES (?, ?) RETURNING track_id;";
+        jdbcTemplate.queryForObject(sql, String.class, playlistID, trackID);
+    }
 }

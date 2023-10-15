@@ -18,6 +18,11 @@ public class AlbumDao {
         jdbcTemplate.queryForObject(sql, String.class, album.getId(), album.getName(), album.getArtists(), album.getName());
     }
 
+    public void addAlbumToTrack(String albumID, String trackID) {
+        String sql = "INSERT INTO album_track (album_id, track_id) VALUES (?, ?) RETURNING track_id;";
+        jdbcTemplate.queryForObject(sql, String.class, albumID, trackID);
+    }
+
 // TODO: stupid way of doing, but don't need return object. Ask Walt later for this. would rather do nothing than update meaninglessly
 //    public void create_album(Album album) {
 //        String sql = String.format("INSERT INTO album (id, name, artists) VALUES ('%s', '%s', '%s');",
