@@ -218,7 +218,7 @@ public class Controller {
                             continue;
                         }
                         Track track = new Track(albumItems.getJSONObject(i).getString("id"),
-                                albumItems.getJSONObject(i).getString("name"));
+                                albumItems.getJSONObject(i).getString("name"), false);
                         albumTracks = addUniqueStringToList(albumTracks,track.getId());
                         trackDao.createTrack(track);
                         albumDao.addAlbumToTrack(albumID,track.getId());
@@ -256,7 +256,7 @@ public class Controller {
                 for (int i = 0; i < savedSongsItems.length(); i++) {
                     JSONObject playlistItemsData = savedSongsItems.getJSONObject(i);
                     Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
-                            playlistItemsData.getJSONObject("track").getString("name"));
+                            playlistItemsData.getJSONObject("track").getString("name"), true);
                     savedTrackIds = addUniqueStringToList(savedTrackIds,track.getId());
                     trackDao.createTrack(track);
                 }
@@ -295,7 +295,7 @@ public class Controller {
                             continue;
                         }
                         Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
-                                playlistItemsData.getJSONObject("track").getString("name"), true);
+                                playlistItemsData.getJSONObject("track").getString("name"), false);
                         playlistTracks = addUniqueStringToList(playlistTracks,track.getId());
                         trackDao.createTrack(track);
                         playlistDao.addPlaylistToTrack(playlistID, track.getId());
