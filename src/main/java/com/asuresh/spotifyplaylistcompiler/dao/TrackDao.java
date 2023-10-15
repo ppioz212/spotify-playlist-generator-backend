@@ -18,4 +18,13 @@ public class TrackDao {
                 "DO UPDATE SET liked_song = ? RETURNING id;";
         jdbcTemplate.queryForObject(sql, String.class, track.getId(), track.getName(), track.isLikedSong(), track.isLikedSong());
     }
+
+    public void createTrackExtra(Track track) {
+        String sql = "INSERT INTO track (id, liked_song, tempo, instrumentalness, time_signature) " +
+                "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) " +
+                "DO UPDATE SET liked_song = ?, tempo = ?, instrumentalness = ?, time_signature = ? RETURNING id;";
+        jdbcTemplate.queryForObject(sql, String.class, track.getId(),
+                track.isLikedSong(), track.getTempo(), track.getInstrumentalness(), track.getTime_signature(),
+                track.isLikedSong(), track.getTempo(), track.getInstrumentalness(), track.getTime_signature());
+    }
 }

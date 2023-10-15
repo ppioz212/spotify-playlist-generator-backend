@@ -298,6 +298,7 @@ public class Controller {
                         Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
                                 playlistItemsData.getJSONObject("track").getString("name"), false);
                         playlistTracks = addUniqueStringToList(playlistTracks, track.getId());
+                        System.out.println(track.getId());
                         trackDao.createTrack(track);
                         playlistDao.addPlaylistToTrack(playlistID, track.getId());
                     }
@@ -333,10 +334,11 @@ public class Controller {
                 JSONObject obj = new JSONObject(jsonOutput);
                 JSONArray trackFeatureItems = obj.getJSONArray("audio_features");
                 for (int k = 0; k < trackFeatureItems.length(); k++) {
-                    JSONObject playlistItemsData = trackFeatureItems.getJSONObject(i);
-                    Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
-                            playlistItemsData.getJSONObject("track").getString("name"), true);
-                    trackDao.createTrack(track);
+                    JSONObject features = trackFeatureItems.getJSONObject(i);
+                    Track track = new Track(features.getString("id"), false,
+                            features.getFloat("tempo"),features.getFloat("instrumentalness"),
+                            features.getInt("time_signature"));
+                    trackDao.createTrackExtra(track);
 
                 }
             }
