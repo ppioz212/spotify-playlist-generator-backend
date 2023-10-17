@@ -10,9 +10,6 @@ import java.util.Base64;
 
 public class Network {
     public final MediaType JSON = MediaType.get("application/json");
-    private final String clientID = "1dbfd19797084691bbd011cab62cb6a6";
-    private final String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
-    private final String redirectUri = "http://localhost:3000";
     private final OkHttpClient client = new OkHttpClient();
     private final Gson gson = new Gson();
 
@@ -29,11 +26,27 @@ public class Network {
         }
     }
 
-//    public JSONObject JsonPostRequest(String accessToken, String URL, JSONObject data) {
-//
-//    }
+    public JSONObject JsonPostRequest(String accessToken, String URL, JSONObject data) throws IOException {
+        RequestBody body = RequestBody.create(String.valueOf(data), JSON);
+        Request request = new Request.Builder()
+                .url(URL)
+                .post(body)
+                .header("Authorization", "Bearer " + accessToken)
+                .header("Content-Type", "application/json")
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
+            assert response.body() != null;
+            String jsonOutput = response.body().string();
+            return new JSONObject(jsonOutput);
+        }
+    }
 
     public Token getAccessTokenAPICall(String generatedCode) {
+        final String clientID = "1dbfd19797084691bbd011cab62cb6a6";
+        final String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
+        final String redirectUri = "http://localhost:3000";
         String authHeader = clientID + ":" + secretClientID;
         String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
 
@@ -56,20 +69,5 @@ public class Network {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-    }
-
-    public String getUserId(String accessToken) throws IOException {
-        Request request = new Request.Builder()
-                .url("https://api.spotify.com/v1/me")
-                .header("Authorization", "Bearer " + accessToken)
-                .build();
-
-        String jsonOutput;
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-            assert response.body() != null;
-            jsonOutput = response.body().string();
-        }
-        return new JSONObject(jsonOutput).getString("id");
     }
 }
