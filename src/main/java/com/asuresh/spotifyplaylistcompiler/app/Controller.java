@@ -44,8 +44,7 @@ public class Controller {
 
     @PostMapping("/generateNewPlaylist")
     public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistObject, @RequestHeader("Authorization") String accessToken) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        Gson gson = new Gson();
+
         if (playlistObject.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
@@ -63,6 +62,7 @@ public class Controller {
             List<String> savedSongsTrackIds = compileUserSavedSongIds(accessToken);
             finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd, savedSongsTrackIds));
         }
+//        getTrackFeatures(accessToken,finalTrackIdsToAdd);
         String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
         addTrackItemsToNewPlaylist(accessToken, newPlaylistId, finalTrackIdsToAdd);
         return newPlaylistId;
@@ -298,7 +298,6 @@ public class Controller {
                         Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
                                 playlistItemsData.getJSONObject("track").getString("name"), false);
                         playlistTracks = addUniqueStringToList(playlistTracks, track.getId());
-                        System.out.println(track.getId());
                         trackDao.createTrack(track);
                         playlistDao.addPlaylistToTrack(playlistID, track.getId());
                     }
@@ -310,20 +309,20 @@ public class Controller {
 
     public void getTrackFeatures(String accessToken, List<String> trackIds) throws IOException {
         OkHttpClient client = new OkHttpClient();
-        int numberOfTimesToGetFeatures = trackIds.size() / 98 + 1;
+        int numberOfTimesToGetFeatures = trackIds.size() / 97 + 1;
         int j = 0;
         StringBuilder sb_ids = new StringBuilder();
         for (int i = 0; i < numberOfTimesToGetFeatures; i++) {
             for (; j < trackIds.size(); j++) {
-                sb_ids.append(trackIds.get(j)).append("%");
-                if (j % 97 == 0 && j != 0) {
+                sb_ids.append(trackIds.get(j)).append("%2C");
+                if (j == trackIds.size() - 2 || (j % 96 == 0 && j != 0)) {
                     sb_ids.append(trackIds.get(j+1));
                     j += 2;
                     break;
                 }
             }
             Request request = new Request.Builder()
-                    .url("https://api.spotify.com/v1/audio-features/?ids=" + sb_ids)
+                    .url("https://api.spotify.com/v1/audio-features?ids=" + sb_ids)
                     .header("Authorization", "Bearer " + accessToken)
                     .build();
 
@@ -334,12 +333,12 @@ public class Controller {
                 JSONObject obj = new JSONObject(jsonOutput);
                 JSONArray trackFeatureItems = obj.getJSONArray("audio_features");
                 for (int k = 0; k < trackFeatureItems.length(); k++) {
-                    JSONObject features = trackFeatureItems.getJSONObject(i);
+                    JSONObject features = trackFeatureItems.getJSONObject(k);
+                    System.out.println(k + ") " + features.toString());
                     Track track = new Track(features.getString("id"), false,
-                            features.getFloat("tempo"),features.getFloat("instrumentalness"),
+                            features.getDouble("tempo"),features.getDouble("instrumentalness"),
                             features.getInt("time_signature"));
                     trackDao.createTrackExtra(track);
-
                 }
             }
         }
@@ -368,20 +367,19 @@ public class Controller {
     public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
-        int numberOfTimesToAddTracks = trackIdsToAdd.size() / 98 + 1;
+        int numberOfTimesToAddTracks = trackIdsToAdd.size() / 99 + 1;
         int j = 0;
         for (int i = 0; i < numberOfTimesToAddTracks; i++) {
             JSONArray trackListURIs = new JSONArray();
             for (; j < trackIdsToAdd.size(); j++) {
                 trackListURIs.put("spotify:track:" + trackIdsToAdd.get(j));
-                if (j % 98 == 0 && j != 0) {
+                if (j % 99 == 0 && j != 0) {
                     j++;
                     break;
                 }
             }
             JSONObject finalTrackListURis = new JSONObject();
             finalTrackListURis.put("uris", trackListURIs);
-
             RequestBody body = RequestBody.create(String.valueOf(finalTrackListURis), JSON);
             Request request = new Request.Builder()
                     .url("https://api.spotify.com/v1/playlists/" + newPlaylistId + "/tracks")
