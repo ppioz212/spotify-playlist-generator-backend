@@ -38,8 +38,7 @@ public class Network {
         try (Response response = client.newCall(request).execute()) {
             if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
             assert response.body() != null;
-            String jsonOutput = response.body().string();
-            return new JSONObject(jsonOutput);
+            return new JSONObject(response.body().string());
         }
     }
 

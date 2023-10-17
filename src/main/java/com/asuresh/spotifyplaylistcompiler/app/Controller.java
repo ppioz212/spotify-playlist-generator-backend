@@ -26,6 +26,7 @@ public class Controller {
     private final PlaylistDao playlistDao;
     private final TrackDao trackDao;
     private final Network network;
+    private List<String> finalTrackIds;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -36,6 +37,7 @@ public class Controller {
         playlistDao = new PlaylistDao(dataSource);
         trackDao = new TrackDao(dataSource);
         network = new Network();
+        finalTrackIds = new ArrayList<>();
     }
 
     @PostMapping("/generateNewPlaylist")
@@ -87,7 +89,7 @@ public class Controller {
                 playlists.add(currPlaylist);
                 playlistDao.createPlaylist(currPlaylist);
             }
-            playlistUrl = checkIfNextUrlAvailable(obj);
+            playlistUrl = checkIfNextURLAvailable(obj);
         }
         return playlists;
     }
@@ -116,7 +118,7 @@ public class Controller {
                 albums.add(currAlbum);
                 albumDao.createAlbum(currAlbum);
             }
-            albumUrl = checkIfNextUrlAvailable(obj);
+            albumUrl = checkIfNextURLAvailable(obj);
         }
         return albums;
     }
@@ -143,7 +145,7 @@ public class Controller {
                     trackDao.createTrack(track);
                     albumDao.addAlbumToTrack(albumID, track.getId());
                 }
-                albumTracksUrl = checkIfNextUrlAvailable(obj);
+                albumTracksUrl = checkIfNextURLAvailable(obj);
             }
         }
         return albumTracks;
@@ -163,7 +165,7 @@ public class Controller {
                 savedTrackIds = addUniqueStringToList(savedTrackIds, track.getId());
                 trackDao.createTrack(track);
             }
-            savedSongsUrl = checkIfNextUrlAvailable(obj);
+            savedSongsUrl = checkIfNextURLAvailable(obj);
         }
         return savedTrackIds;
     }
@@ -187,7 +189,7 @@ public class Controller {
                     trackDao.createTrack(track);
                     playlistDao.addPlaylistToTrack(playlistID, track.getId());
                 }
-                playlistTracksUrl = checkIfNextUrlAvailable(obj);
+                playlistTracksUrl = checkIfNextURLAvailable(obj);
             }
         }
         return playlistTracks;

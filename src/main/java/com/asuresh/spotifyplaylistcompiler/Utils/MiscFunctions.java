@@ -50,7 +50,7 @@ public class MiscFunctions {
         myWriter.close();
     }
 
-    public static String checkIfNextUrlAvailable(JSONObject object) {
+    public static String checkIfNextURLAvailable(JSONObject object) {
         if (object.isNull("next")) {
             return null;
         }
