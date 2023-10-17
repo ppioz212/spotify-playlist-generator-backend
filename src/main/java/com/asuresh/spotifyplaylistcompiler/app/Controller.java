@@ -1,10 +1,10 @@
 package com.asuresh.spotifyplaylistcompiler.app;
 
+import com.asuresh.spotifyplaylistcompiler.Utils.Network;
 import com.asuresh.spotifyplaylistcompiler.dao.TrackDao;
 import com.asuresh.spotifyplaylistcompiler.model.*;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
-import com.google.gson.Gson;
 import okhttp3.*;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.json.JSONArray;
@@ -16,7 +16,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.addUniqueStringToList;
@@ -31,6 +30,7 @@ public class Controller {
     private final AlbumDao albumDao;
     private final PlaylistDao playlistDao;
     private final TrackDao trackDao;
+    private final Network network;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -40,6 +40,7 @@ public class Controller {
         albumDao = new AlbumDao(dataSource);
         playlistDao = new PlaylistDao(dataSource);
         trackDao = new TrackDao(dataSource);
+        network = new Network();
     }
 
     @PostMapping("/generateNewPlaylist")
@@ -62,7 +63,7 @@ public class Controller {
             List<String> savedSongsTrackIds = compileUserSavedSongIds(accessToken);
             finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd, savedSongsTrackIds));
         }
-//        getTrackFeatures(accessToken,finalTrackIdsToAdd);
+        getTrackFeatures(accessToken, finalTrackIdsToAdd);
         String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
         addTrackItemsToNewPlaylist(accessToken, newPlaylistId, finalTrackIdsToAdd);
         return newPlaylistId;
@@ -70,91 +71,69 @@ public class Controller {
 
     @GetMapping("/getPlaylists")
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
-        String userId = getUserId(accessToken);
-        OkHttpClient client = new OkHttpClient();
-
+        String userId = network.getUserId(accessToken);
         List<Playlist> playlists = new ArrayList<>();
+
         boolean shouldRunRequestAgain = true;
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (shouldRunRequestAgain) {
-            Request request = new Request.Builder()
-                    .url(playlistUrl)
-                    .header("Authorization", "Bearer " + accessToken)
-                    .build();
+            JSONObject obj = network.JsonGetRequest(accessToken, playlistUrl);
 
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                assert response.body() != null;
-                String jsonOutput = response.body().string();
-
-                JSONObject obj = new JSONObject(jsonOutput);
-                if (obj.isNull("next")) {
-                    shouldRunRequestAgain = false;
-                } else {
-                    playlistUrl = obj.getString("next");
-                }
-                JSONArray playlistItems = obj.getJSONArray("items");
-                for (int i = 0; i < playlistItems.length(); i++) {
-
-                    JSONObject playlistItemData = playlistItems.getJSONObject(i);
-                    JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
-                    Playlist currPlaylist = new Playlist(playlistItemData.getString("id"),
-                            playlistItemData.getString("name"), playlistOwner.getString("id"));
-                    if (currPlaylist.getOwner().equals(userId)) {
-                        currPlaylist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
-                    } else {
-                        currPlaylist.setType(PlaylistTypeEnum.ALL_FOLLOWED_PLAYLISTS);
-                    }
-                    playlists.add(currPlaylist);
-                    playlistDao.createPlaylist(currPlaylist);
-                }
-
+            if (obj.isNull("next")) {
+                shouldRunRequestAgain = false;
+            } else {
+                playlistUrl = obj.getString("next");
             }
+            JSONArray playlistItems = obj.getJSONArray("items");
+            for (int i = 0; i < playlistItems.length(); i++) {
+
+                JSONObject playlistItemData = playlistItems.getJSONObject(i);
+                JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
+                Playlist currPlaylist = new Playlist(playlistItemData.getString("id"),
+                        playlistItemData.getString("name"), playlistOwner.getString("id"));
+                if (currPlaylist.getOwner().equals(userId)) {
+                    currPlaylist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
+                } else {
+                    currPlaylist.setType(PlaylistTypeEnum.ALL_FOLLOWED_PLAYLISTS);
+                }
+                playlists.add(currPlaylist);
+                playlistDao.createPlaylist(currPlaylist);
+            }
+
         }
         return playlists;
     }
 
     @GetMapping("/getAlbums")
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
-        OkHttpClient client = new OkHttpClient();
         List<Album> albums = new ArrayList<>();
         boolean shouldRunRequestAgain = true;
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (shouldRunRequestAgain) {
-            Request request = new Request.Builder()
-                    .url(albumUrl)
-                    .header("Authorization", "Bearer " + accessToken)
-                    .build();
+            JSONObject obj = network.JsonGetRequest(accessToken, albumUrl);
 
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                assert response.body() != null;
-                String jsonOutput = response.body().string();
+            if (obj.isNull("next")) {
+                shouldRunRequestAgain = false;
+            } else {
+                albumUrl = obj.getString("next");
+            }
+            JSONArray albumItems = obj.getJSONArray("items");
+            for (int i = 0; i < albumItems.length(); i++) {
 
-                JSONObject obj = new JSONObject(jsonOutput);
-                if (obj.isNull("next")) {
-                    shouldRunRequestAgain = false;
-                } else {
-                    albumUrl = obj.getString("next");
-                }
-                JSONArray albumItems = obj.getJSONArray("items");
-                for (int i = 0; i < albumItems.length(); i++) {
-
-                    JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
-                    StringBuilder sb = new StringBuilder();
-                    JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
-                    for (int j = 0; j < artistsJSONArray.length(); j++) {
-                        if (j == artistsJSONArray.length() - 1) {
-                            sb.append(artistsJSONArray.getJSONObject(j).getString("name"));
-                            continue;
-                        }
-                        sb.append(artistsJSONArray.getJSONObject(j).getString("name")).append(", ");
+                JSONObject albumData = albumItems.getJSONObject(i).getJSONObject("album");
+                StringBuilder sb = new StringBuilder();
+                JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
+                for (int j = 0; j < artistsJSONArray.length(); j++) {
+                    if (j == artistsJSONArray.length() - 1) {
+                        sb.append(artistsJSONArray.getJSONObject(j).getString("name"));
+                        continue;
                     }
-                    Album currAlbum = new Album(albumData.getString("id"),
-                            albumData.getString("name"), sb.toString());
-                    albums.add(currAlbum);
-                    albumDao.createAlbum(currAlbum);
+                    sb.append(artistsJSONArray.getJSONObject(j).getString("name")).append(", ");
                 }
+                Album currAlbum = new Album(albumData.getString("id"),
+                        albumData.getString("name"), sb.toString());
+                albums.add(currAlbum);
+                albumDao.createAlbum(currAlbum);
             }
         }
         return albums;
@@ -162,67 +141,32 @@ public class Controller {
 
     @PostMapping("/getAccessToken")
     public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) {
-        OkHttpClient client = new OkHttpClient();
-        Gson gson = new Gson();
-
-        String authHeader = clientID + ":" + secretClientID;
-        String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
-
-        RequestBody formBody = new FormBody.Builder()
-                .add("grant_type", "authorization_code")
-                .add("code", generatedCode)
-                .add("redirect_uri", redirectUri)
-                .build();
-
-        Request request = new Request.Builder()
-                .url("https://accounts.spotify.com/api/token")
-                .post(formBody)
-                .header("Content-Type", "application/x-www-form-urlencoded")
-                .header("Authorization", "Basic " + encodedString)
-                .build();
-
-        try (Response response = client.newCall(request).execute()) {
-            assert response.body() != null;
-            return gson.fromJson(response.body().string(), Token.class);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        return network.getAccessTokenAPICall(generatedCode);
     }
 
     public List<String> compileAlbumTrackIds(List<String> playlistIds, String accessToken) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
         List<String> albumTracks = new ArrayList<>();
         for (String albumID : playlistIds) {
             String albumTracksUrl = "https://api.spotify.com/v1/albums/" + albumID + "/tracks?limit=50";
             boolean shouldRunRequestAgain = true;
             while (shouldRunRequestAgain) {
-                Request request = new Request.Builder()
-                        .url(albumTracksUrl)
-                        .header("Authorization", "Bearer " + accessToken)
-                        .build();
+                JSONObject obj = network.JsonGetRequest(accessToken, albumTracksUrl);
 
-                try (Response response = client.newCall(request).execute()) {
-                    if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                    assert response.body() != null;
-                    String jsonOutput = response.body().string();
-                    JSONObject obj = new JSONObject(jsonOutput);
-                    if (obj.isNull("next")) {
-                        shouldRunRequestAgain = false;
-                    } else {
-                        albumTracksUrl = obj.getString("next");
+                if (obj.isNull("next")) {
+                    shouldRunRequestAgain = false;
+                } else {
+                    albumTracksUrl = obj.getString("next");
+                }
+                JSONArray albumItems = obj.getJSONArray("items");
+                for (int i = 0; i < albumItems.length(); i++) {
+                    if (albumItems.getJSONObject(i).getString("id") == null) {
+                        continue;
                     }
-                    JSONArray albumItems = obj.getJSONArray("items");
-                    for (int i = 0; i < albumItems.length(); i++) {
-                        if (albumItems.getJSONObject(i).getString("id") == null) {
-                            continue;
-                        }
-                        Track track = new Track(albumItems.getJSONObject(i).getString("id"),
-                                albumItems.getJSONObject(i).getString("name"), false);
-                        albumTracks = addUniqueStringToList(albumTracks, track.getId());
-                        trackDao.createTrack(track);
-                        albumDao.addAlbumToTrack(albumID, track.getId());
-                    }
+                    Track track = new Track(albumItems.getJSONObject(i).getString("id"),
+                            albumItems.getJSONObject(i).getString("name"), false);
+                    albumTracks = addUniqueStringToList(albumTracks, track.getId());
+                    trackDao.createTrack(track);
+                    albumDao.addAlbumToTrack(albumID, track.getId());
                 }
             }
         }
@@ -231,76 +175,52 @@ public class Controller {
 
 
     public List<String> compileUserSavedSongIds(String accessToken) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
         List<String> savedTrackIds = new ArrayList<>();
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
         boolean shouldRunRequestAgain = true;
         while (shouldRunRequestAgain) {
-            Request request = new Request.Builder()
-                    .url(savedSongsUrl)
-                    .header("Authorization", "Bearer " + accessToken)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                assert response.body() != null;
-                String jsonOutput = response.body().string();
-                JSONObject obj = new JSONObject(jsonOutput);
-                if (obj.isNull("next")) {
-                    shouldRunRequestAgain = false;
-                } else {
-                    savedSongsUrl = obj.getString("next");
-                }
-                JSONArray savedSongsItems = obj.getJSONArray("items");
-                for (int i = 0; i < savedSongsItems.length(); i++) {
-                    JSONObject playlistItemsData = savedSongsItems.getJSONObject(i);
-                    Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
-                            playlistItemsData.getJSONObject("track").getString("name"), true);
-                    savedTrackIds = addUniqueStringToList(savedTrackIds, track.getId());
-                    trackDao.createTrack(track);
-                }
+            JSONObject obj = network.JsonGetRequest(accessToken, savedSongsUrl);
+            if (obj.isNull("next")) {
+                shouldRunRequestAgain = false;
+            } else {
+                savedSongsUrl = obj.getString("next");
+            }
+            JSONArray savedSongsItems = obj.getJSONArray("items");
+            for (int i = 0; i < savedSongsItems.length(); i++) {
+                JSONObject playlistItemsData = savedSongsItems.getJSONObject(i);
+                Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
+                        playlistItemsData.getJSONObject("track").getString("name"), true);
+                savedTrackIds = addUniqueStringToList(savedTrackIds, track.getId());
+                trackDao.createTrack(track);
             }
         }
         return savedTrackIds;
     }
 
     public List<String> compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
         List<String> playlistTracks = new ArrayList<>();
         for (String playlistID : playlistIds) {
             String playlistTracksUrl = "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50";
             boolean shouldRunRequestAgain = true;
             while (shouldRunRequestAgain) {
-                Request request = new Request.Builder()
-                        .url(playlistTracksUrl)
-                        .header("Authorization", "Bearer " + accessToken)
-                        .build();
-
-                try (Response response = client.newCall(request).execute()) {
-                    if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                    assert response.body() != null;
-                    String jsonOutput = response.body().string();
-                    JSONObject obj = new JSONObject(jsonOutput);
-                    if (obj.isNull("next")) {
-                        shouldRunRequestAgain = false;
-                    } else {
-                        playlistTracksUrl = obj.getString("next");
+                JSONObject obj = network.JsonGetRequest(accessToken, playlistTracksUrl);
+                if (obj.isNull("next")) {
+                    shouldRunRequestAgain = false;
+                } else {
+                    playlistTracksUrl = obj.getString("next");
+                }
+                JSONArray playlistItems = obj.getJSONArray("items");
+                for (int i = 0; i < playlistItems.length(); i++) {
+                    JSONObject playlistItemsData = playlistItems.getJSONObject(i);
+                    if (playlistItemsData.getJSONObject("track").isNull("id") ||
+                            (playlistItemsData.keySet().contains("episode"))) {
+                        continue;
                     }
-                    JSONArray playlistItems = obj.getJSONArray("items");
-                    for (int i = 0; i < playlistItems.length(); i++) {
-                        JSONObject playlistItemsData = playlistItems.getJSONObject(i);
-                        if (playlistItemsData.getJSONObject("track").isNull("id") ||
-                                (playlistItemsData.keySet().contains("episode"))) {
-                            continue;
-                        }
-                        Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
-                                playlistItemsData.getJSONObject("track").getString("name"), false);
-                        playlistTracks = addUniqueStringToList(playlistTracks, track.getId());
-                        trackDao.createTrack(track);
-                        playlistDao.addPlaylistToTrack(playlistID, track.getId());
-                    }
+                    Track track = new Track(playlistItemsData.getJSONObject("track").getString("id"),
+                            playlistItemsData.getJSONObject("track").getString("name"), false);
+                    playlistTracks = addUniqueStringToList(playlistTracks, track.getId());
+                    trackDao.createTrack(track);
+                    playlistDao.addPlaylistToTrack(playlistID, track.getId());
                 }
             }
         }
@@ -308,38 +228,30 @@ public class Controller {
     }
 
     public void getTrackFeatures(String accessToken, List<String> trackIds) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-        int numberOfTimesToGetFeatures = trackIds.size() / 97 + 1;
+        int numberOfTimesToGetFeatures = trackIds.size() / 100 + 1;
         int j = 0;
-        StringBuilder sb_ids = new StringBuilder();
         for (int i = 0; i < numberOfTimesToGetFeatures; i++) {
+            StringBuilder sb_ids = new StringBuilder();
             for (; j < trackIds.size(); j++) {
-                sb_ids.append(trackIds.get(j)).append("%2C");
-                if (j == trackIds.size() - 2 || (j % 96 == 0 && j != 0)) {
-                    sb_ids.append(trackIds.get(j+1));
-                    j += 2;
+                if (j % 100 == 0) {
+                    sb_ids.append(trackIds.get(j));
+                } else {
+                    sb_ids.append("%2C").append(trackIds.get(j));
+                }
+                if (j % 100 == 99 && j != 0) {
+                    j++;
                     break;
                 }
             }
-            Request request = new Request.Builder()
-                    .url("https://api.spotify.com/v1/audio-features?ids=" + sb_ids)
-                    .header("Authorization", "Bearer " + accessToken)
-                    .build();
-
-            try (Response response = client.newCall(request).execute()) {
-                if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-                assert response.body() != null;
-                String jsonOutput = response.body().string();
-                JSONObject obj = new JSONObject(jsonOutput);
-                JSONArray trackFeatureItems = obj.getJSONArray("audio_features");
-                for (int k = 0; k < trackFeatureItems.length(); k++) {
-                    JSONObject features = trackFeatureItems.getJSONObject(k);
-                    System.out.println(k + ") " + features.toString());
-                    Track track = new Track(features.getString("id"), false,
-                            features.getDouble("tempo"),features.getDouble("instrumentalness"),
-                            features.getInt("time_signature"));
-                    trackDao.createTrackExtra(track);
-                }
+            String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + sb_ids;
+            JSONObject obj = network.JsonGetRequest(accessToken, trackFeaturesUrl);
+            JSONArray trackFeatureItems = obj.getJSONArray("audio_features");
+            for (int k = 0; k < trackFeatureItems.length(); k++) {
+                JSONObject features = trackFeatureItems.getJSONObject(k);
+                Track track = new Track(features.getString("id"), false,
+                        features.getDouble("tempo"), features.getDouble("instrumentalness"),
+                        features.getInt("time_signature"));
+                trackDao.createTrackExtra(track);
             }
         }
     }
@@ -367,7 +279,7 @@ public class Controller {
     public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId, List<String> trackIdsToAdd) throws IOException {
         OkHttpClient client = new OkHttpClient();
 
-        int numberOfTimesToAddTracks = trackIdsToAdd.size() / 99 + 1;
+        int numberOfTimesToAddTracks = trackIdsToAdd.size() / 100 + 1;
         int j = 0;
         for (int i = 0; i < numberOfTimesToAddTracks; i++) {
             JSONArray trackListURIs = new JSONArray();
@@ -393,22 +305,5 @@ public class Controller {
                 assert response.body() != null;
             }
         }
-    }
-
-    public String getUserId(String accessToken) throws IOException {
-        OkHttpClient client = new OkHttpClient();
-
-        Request request = new Request.Builder()
-                .url("https://api.spotify.com/v1/me")
-                .header("Authorization", "Bearer " + accessToken)
-                .build();
-
-        String jsonOutput;
-        try (Response response = client.newCall(request).execute()) {
-            if (!response.isSuccessful()) throw new IOException("Unexpected code " + response);
-            assert response.body() != null;
-            jsonOutput = response.body().string();
-        }
-        return new JSONObject(jsonOutput).getString("id");
     }
 }
