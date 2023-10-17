@@ -5,7 +5,6 @@ import com.asuresh.spotifyplaylistcompiler.dao.TrackDao;
 import com.asuresh.spotifyplaylistcompiler.model.*;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
-import okhttp3.*;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -15,13 +14,11 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.AbstractCollection;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.addUniqueStringToList;
-import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.mergeToUniqueList;
+import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.*;
 
 @RestController
 public class Controller {
@@ -72,17 +69,9 @@ public class Controller {
         JSONObject UserObj = network.JsonGetRequest(accessToken, "https://api.spotify.com/v1/me");
         String userId = UserObj.getString("id");
         List<Playlist> playlists = new ArrayList<>();
-
-        boolean shouldRunRequestAgain = true;
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
-        while (shouldRunRequestAgain) {
+        while (playlistUrl != null) {
             JSONObject obj = network.JsonGetRequest(accessToken, playlistUrl);
-
-            if (obj.isNull("next")) {
-                shouldRunRequestAgain = false;
-            } else {
-                playlistUrl = obj.getString("next");
-            }
             JSONArray playlistItems = obj.getJSONArray("items");
             for (int i = 0; i < playlistItems.length(); i++) {
 
@@ -98,7 +87,7 @@ public class Controller {
                 playlists.add(currPlaylist);
                 playlistDao.createPlaylist(currPlaylist);
             }
-
+            playlistUrl = checkIfNextUrlAvailable(obj);
         }
         return playlists;
     }
@@ -106,16 +95,9 @@ public class Controller {
     @GetMapping("/getAlbums")
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         List<Album> albums = new ArrayList<>();
-        boolean shouldRunRequestAgain = true;
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
-        while (shouldRunRequestAgain) {
+        while (albumUrl != null) {
             JSONObject obj = network.JsonGetRequest(accessToken, albumUrl);
-
-            if (obj.isNull("next")) {
-                shouldRunRequestAgain = false;
-            } else {
-                albumUrl = obj.getString("next");
-            }
             JSONArray albumItems = obj.getJSONArray("items");
             for (int i = 0; i < albumItems.length(); i++) {
 
@@ -134,6 +116,7 @@ public class Controller {
                 albums.add(currAlbum);
                 albumDao.createAlbum(currAlbum);
             }
+            albumUrl = checkIfNextUrlAvailable(obj);
         }
         return albums;
     }
@@ -147,15 +130,8 @@ public class Controller {
         List<String> albumTracks = new ArrayList<>();
         for (String albumID : playlistIds) {
             String albumTracksUrl = "https://api.spotify.com/v1/albums/" + albumID + "/tracks?limit=50";
-            boolean shouldRunRequestAgain = true;
-            while (shouldRunRequestAgain) {
+            while (albumTracksUrl != null) {
                 JSONObject obj = network.JsonGetRequest(accessToken, albumTracksUrl);
-
-                if (obj.isNull("next")) {
-                    shouldRunRequestAgain = false;
-                } else {
-                    albumTracksUrl = obj.getString("next");
-                }
                 JSONArray albumItems = obj.getJSONArray("items");
                 for (int i = 0; i < albumItems.length(); i++) {
                     if (albumItems.getJSONObject(i).getString("id") == null) {
@@ -167,6 +143,7 @@ public class Controller {
                     trackDao.createTrack(track);
                     albumDao.addAlbumToTrack(albumID, track.getId());
                 }
+                albumTracksUrl = checkIfNextUrlAvailable(obj);
             }
         }
         return albumTracks;
@@ -176,14 +153,8 @@ public class Controller {
     public List<String> compileUserSavedSongIds(String accessToken) throws IOException {
         List<String> savedTrackIds = new ArrayList<>();
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
-        boolean shouldRunRequestAgain = true;
-        while (shouldRunRequestAgain) {
+        while (savedSongsUrl != null) {
             JSONObject obj = network.JsonGetRequest(accessToken, savedSongsUrl);
-            if (obj.isNull("next")) {
-                shouldRunRequestAgain = false;
-            } else {
-                savedSongsUrl = obj.getString("next");
-            }
             JSONArray savedSongsItems = obj.getJSONArray("items");
             for (int i = 0; i < savedSongsItems.length(); i++) {
                 JSONObject playlistItemsData = savedSongsItems.getJSONObject(i);
@@ -192,6 +163,7 @@ public class Controller {
                 savedTrackIds = addUniqueStringToList(savedTrackIds, track.getId());
                 trackDao.createTrack(track);
             }
+            savedSongsUrl = checkIfNextUrlAvailable(obj);
         }
         return savedTrackIds;
     }
@@ -200,15 +172,8 @@ public class Controller {
         List<String> playlistTracks = new ArrayList<>();
         for (String playlistID : playlistIds) {
             String playlistTracksUrl = "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50";
-            boolean shouldRunRequestAgain = true;
-            while (shouldRunRequestAgain) {
+            while (playlistTracksUrl != null) {
                 JSONObject obj = network.JsonGetRequest(accessToken, playlistTracksUrl);
-
-                if (obj.isNull("next")) {
-                    shouldRunRequestAgain = false;
-                } else {
-                    playlistTracksUrl = obj.getString("next");
-                }
                 JSONArray playlistItems = obj.getJSONArray("items");
                 for (int i = 0; i < playlistItems.length(); i++) {
                     JSONObject playlistItemsData = playlistItems.getJSONObject(i);
@@ -222,6 +187,7 @@ public class Controller {
                     trackDao.createTrack(track);
                     playlistDao.addPlaylistToTrack(playlistID, track.getId());
                 }
+                playlistTracksUrl = checkIfNextUrlAvailable(obj);
             }
         }
         return playlistTracks;
@@ -245,7 +211,6 @@ public class Controller {
             }
             String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + sb_ids;
             JSONObject obj = network.JsonGetRequest(accessToken, trackFeaturesUrl);
-
             JSONArray trackFeatureItems = obj.getJSONArray("audio_features");
             for (int k = 0; k < trackFeatureItems.length(); k++) {
                 JSONObject features = trackFeatureItems.getJSONObject(k);
