@@ -26,7 +26,7 @@ public class MiscFunctions {
         if (!list.contains(item)) {
             list.add(item);
         }
-        return new ArrayList<>(list);
+        return list;
     }
 
     public static String getInput(String message) {

@@ -35,28 +35,22 @@ public class Controller {
         albumDao = new AlbumDao(dataSource);
         playlistDao = new PlaylistDao(dataSource);
         trackDao = new TrackDao(dataSource);
-        finalTrackIds = new ArrayList<>();
     }
 
     @PostMapping("/generateNewPlaylist")
     public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistObject, @RequestHeader("Authorization") String accessToken) throws IOException {
-
+        finalTrackIds = new ArrayList<>();
         if (playlistObject.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
-        List<String> finalTrackIdsToAdd = new ArrayList<>();
-
         if (!playlistObject.getPlaylistsToAdd().isEmpty()) {
-            List<String> playlistTrackIds = compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
-//            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd, playlistTrackIds));
+            compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
         }
         if (!playlistObject.getAlbumsToAdd().isEmpty()) {
-            List<String> albumTrackIds = compileAlbumTrackIds(playlistObject.getAlbumsToAdd(), accessToken);
-//            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd, albumTrackIds));
+            compileAlbumTrackIds(playlistObject.getAlbumsToAdd(), accessToken);
         }
         if (playlistObject.isAddLikedSongs()) {
-            List<String> savedSongsTrackIds = compileUserSavedSongIds(accessToken);
-//            finalTrackIdsToAdd = new ArrayList<>(mergeToUniqueList(finalTrackIdsToAdd, savedSongsTrackIds));
+            compileUserSavedSongIds(accessToken);
         }
         getTrackFeatures(accessToken);
         String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
@@ -103,9 +97,8 @@ public class Controller {
         return Network.getAccessTokenAPICall(generatedCode);
     }
 
-    public List<String> compileAlbumTrackIds(List<String> playlistIds, String accessToken) throws IOException {
-        List<String> albumTracks = new ArrayList<>();
-        for (String albumID : playlistIds) {
+    public void compileAlbumTrackIds(List<String> albumIds, String accessToken) throws IOException {
+        for (String albumID : albumIds) {
             String albumTracksUrl = "https://api.spotify.com/v1/albums/" + albumID + "/tracks?limit=50";
             while (albumTracksUrl != null) {
                 JSONObject obj = Network.JsonGetRequest(accessToken, albumTracksUrl);
@@ -122,12 +115,10 @@ public class Controller {
                 albumTracksUrl = checkIfNextURLAvailable(obj);
             }
         }
-        return albumTracks;
     }
 
 
-    public List<String> compileUserSavedSongIds(String accessToken) throws IOException {
-        List<String> savedTrackIds = new ArrayList<>();
+    public void compileUserSavedSongIds(String accessToken) throws IOException {
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
         while (savedSongsUrl != null) {
             JSONObject obj = Network.JsonGetRequest(accessToken, savedSongsUrl);
@@ -142,11 +133,9 @@ public class Controller {
             }
             savedSongsUrl = checkIfNextURLAvailable(obj);
         }
-        return savedTrackIds;
     }
 
-    public List<String> compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
-        List<String> playlistTracks = new ArrayList<>();
+    public void compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
         for (String playlistID : playlistIds) {
             String playlistTracksUrl = "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50";
             while (playlistTracksUrl != null) {
@@ -164,7 +153,6 @@ public class Controller {
                 playlistTracksUrl = checkIfNextURLAvailable(obj);
             }
         }
-        return playlistTracks;
     }
 
     public void getTrackFeatures(String accessToken) throws IOException {
