@@ -8,12 +8,12 @@ import org.json.JSONObject;
 import java.io.IOException;
 import java.util.Base64;
 
-public class Network {
-    public final MediaType JSON = MediaType.get("application/json");
-    private final OkHttpClient client = new OkHttpClient();
-    private final Gson gson = new Gson();
+public abstract class Network {
+    public static final MediaType JSON = MediaType.get("application/json");
+    private static final OkHttpClient client = new OkHttpClient();
+    private static final Gson gson = new Gson();
 
-    public JSONObject JsonGetRequest(String accessToken, String URL) throws IOException {
+    public static JSONObject JsonGetRequest(String accessToken, String URL) throws IOException {
         Request request = new Request.Builder()
                 .url(URL)
                 .header("Authorization", "Bearer " + accessToken)
@@ -26,7 +26,7 @@ public class Network {
         }
     }
 
-    public JSONObject JsonPostRequest(String accessToken, String URL, JSONObject data) throws IOException {
+    public static JSONObject JsonPostRequest(String accessToken, String URL, JSONObject data) throws IOException {
         RequestBody body = RequestBody.create(String.valueOf(data), JSON);
         Request request = new Request.Builder()
                 .url(URL)
@@ -42,7 +42,7 @@ public class Network {
         }
     }
 
-    public Token getAccessTokenAPICall(String generatedCode) {
+    public static Token getAccessTokenAPICall(String generatedCode) {
         final String clientID = "1dbfd19797084691bbd011cab62cb6a6";
         final String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
         final String redirectUri = "http://localhost:3000";

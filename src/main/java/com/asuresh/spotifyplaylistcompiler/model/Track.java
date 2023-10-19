@@ -8,6 +8,7 @@ public class Track {
     private double instrumentalness;
     private int time_signature;
 
+    public Track() {}
     public Track(String id, boolean likedSong, double BPM, double instrumentalness, int time_signature) {
         this.id = id;
         this.likedSong = likedSong;
