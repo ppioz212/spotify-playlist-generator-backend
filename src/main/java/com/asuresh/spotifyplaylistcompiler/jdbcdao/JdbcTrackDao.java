@@ -6,6 +6,7 @@ import com.asuresh.spotifyplaylistcompiler.model.Track;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 public class JdbcTrackDao implements TrackDao {
     private final JdbcTemplate jdbcTemplate;
@@ -27,5 +28,25 @@ public class JdbcTrackDao implements TrackDao {
         jdbcTemplate.update(sql, track.getId(),
                 track.isLikedSong(), track.getTempo(), track.getInstrumentalness(), track.getTime_signature(),
                 track.isLikedSong(), track.getTempo(), track.getInstrumentalness(), track.getTime_signature());
+    }
+
+    @Override
+    public List<Track> getTracks() {
+        return null;
+    }
+
+    @Override
+    public List<Track> getTracks(int startTempoRange, int endTempoRange, List<String> albumsToAdd, List<String> playlistsToAdd, boolean addLikedSongs) {
+        return null;
+    }
+
+    @Override
+    public Integer getMaxTempoOfTracks() {
+        return null;
+    }
+
+    @Override
+    public Integer getMinTempoOfTracks() {
+        return null;
     }
 }

@@ -5,6 +5,7 @@ import com.asuresh.spotifyplaylistcompiler.model.Album;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
+import java.util.List;
 
 public class JdbcAlbumDao implements AlbumDao {
     private final JdbcTemplate jdbcTemplate;
@@ -17,6 +18,16 @@ public class JdbcAlbumDao implements AlbumDao {
         String sql = "INSERT INTO album (id, name, artists) VALUES (?, ?, ?) ON CONFLICT (id) " +
                 "DO UPDATE SET name = ?";
         jdbcTemplate.update(sql, album.getId(), album.getName(), album.getArtists(), album.getName());
+    }
+
+    @Override
+    public void insertTrackToAlbum(String albumID, String trackID) {
+
+    }
+
+    @Override
+    public List<Album> getAlbums() {
+        return null;
     }
 
     public void addAlbumToTrack(String albumID, String trackID) {

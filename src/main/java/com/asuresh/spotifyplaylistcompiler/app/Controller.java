@@ -178,6 +178,10 @@ public class Controller {
             JSONObject obj = Network.JsonGetRequest(accessToken, trackFeaturesUrl);
             JSONArray trackFeatureItems = obj.getJSONArray("audio_features");
             for (int k = 0; k < trackFeatureItems.length(); k++) {
+                if (trackFeatureItems.isNull(k)) {
+                    System.out.println("Null found at " + k);
+                    continue;
+                }
                 JSONObject features = trackFeatureItems.getJSONObject(k);
                 Track track = new Track(features.getString("id"), false,
                         features.getDouble("tempo"), features.getDouble("instrumentalness"),
