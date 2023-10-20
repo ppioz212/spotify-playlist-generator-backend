@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler.Utils;
+package com.asuresh.spotifyplaylistcompiler.utils;
 
 import com.asuresh.spotifyplaylistcompiler.model.Token;
 import com.google.gson.Gson;
@@ -6,6 +6,9 @@ import okhttp3.*;
 import org.json.JSONObject;
 
 import java.io.IOException;
+import java.io.Reader;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Base64;
 
 public abstract class Network {
@@ -42,11 +45,12 @@ public abstract class Network {
         }
     }
 
-    public static Token getAccessTokenAPICall(String generatedCode) {
-        final String clientID = "1dbfd19797084691bbd011cab62cb6a6";
-        final String secretClientID = "56b83ad8f2e8441288feb994cec8d231";
+    public static Token getAccessTokenAPICall(String generatedCode) throws IOException {
+        final Config config;
+        Reader reader = Files.newBufferedReader(Paths.get("config.json"));
+        config = gson.fromJson(reader, Config.class);
         final String redirectUri = "http://localhost:3000";
-        String authHeader = clientID + ":" + secretClientID;
+        String authHeader = config.getClientId() + ":" + config.getSecretClientId();
         String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
 
         RequestBody formBody = new FormBody.Builder()

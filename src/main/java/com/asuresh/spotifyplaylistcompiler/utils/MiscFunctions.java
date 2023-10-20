@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler.Utils;
+package com.asuresh.spotifyplaylistcompiler.utils;
 
 import org.json.JSONObject;
 

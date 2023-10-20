@@ -1,7 +1,5 @@
 package com.asuresh.spotifyplaylistcompiler.model;
 
-import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
-
 public class Playlist {
 
     private String id;

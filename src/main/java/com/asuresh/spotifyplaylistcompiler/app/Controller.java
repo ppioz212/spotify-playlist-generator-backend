@@ -1,10 +1,10 @@
 package com.asuresh.spotifyplaylistcompiler.app;
 
-import com.asuresh.spotifyplaylistcompiler.Utils.Network;
-import com.asuresh.spotifyplaylistcompiler.dao.TrackDao;
+import com.asuresh.spotifyplaylistcompiler.utils.Network;
+import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcTrackDao;
 import com.asuresh.spotifyplaylistcompiler.model.*;
-import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
-import com.asuresh.spotifyplaylistcompiler.dao.PlaylistDao;
+import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcAlbumDao;
+import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcPlaylistDao;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,13 +18,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static com.asuresh.spotifyplaylistcompiler.Utils.MiscFunctions.*;
+import static com.asuresh.spotifyplaylistcompiler.utils.MiscFunctions.*;
 
 @RestController
 public class Controller {
-    private final AlbumDao albumDao;
-    private final PlaylistDao playlistDao;
-    private final TrackDao trackDao;
+    private final JdbcAlbumDao albumDao;
+    private final JdbcPlaylistDao playlistDao;
+    private final JdbcTrackDao trackDao;
     private List<String> finalTrackIds;
 
     Controller() {
@@ -32,28 +32,28 @@ public class Controller {
         dataSource.setUsername("postgres");
         dataSource.setUrl("jdbc:postgresql://localhost:5432/spotifyData");
         dataSource.setPassword("postgres1");
-        albumDao = new AlbumDao(dataSource);
-        playlistDao = new PlaylistDao(dataSource);
-        trackDao = new TrackDao(dataSource);
+        albumDao = new JdbcAlbumDao(dataSource);
+        playlistDao = new JdbcPlaylistDao(dataSource);
+        trackDao = new JdbcTrackDao(dataSource);
     }
 
     @PostMapping("/generateNewPlaylist")
-    public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistObject, @RequestHeader("Authorization") String accessToken) throws IOException {
+    public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistDTO, @RequestHeader("Authorization") String accessToken) throws IOException {
         finalTrackIds = new ArrayList<>();
-        if (playlistObject.getNameOfPlaylist().equals("test")) {
+        if (playlistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
-        if (!playlistObject.getPlaylistsToAdd().isEmpty()) {
-            compilePlaylistTrackIds(playlistObject.getPlaylistsToAdd(), accessToken);
+        if (!playlistDTO.getPlaylistsToAdd().isEmpty()) {
+            compilePlaylistTrackIds(playlistDTO.getPlaylistsToAdd(), accessToken);
         }
-        if (!playlistObject.getAlbumsToAdd().isEmpty()) {
-            compileAlbumTrackIds(playlistObject.getAlbumsToAdd(), accessToken);
+        if (!playlistDTO.getAlbumsToAdd().isEmpty()) {
+            compileAlbumTrackIds(playlistDTO.getAlbumsToAdd(), accessToken);
         }
-        if (playlistObject.isAddLikedSongs()) {
+        if (playlistDTO.isAddLikedSongs()) {
             compileUserSavedSongIds(accessToken);
         }
         getTrackFeatures(accessToken);
-        String newPlaylistId = createNewPlaylist(accessToken, playlistObject.getNameOfPlaylist(), "");
+        String newPlaylistId = createNewPlaylist(accessToken, playlistDTO.getNameOfPlaylist(), "");
         addTrackItemsToNewPlaylist(accessToken, newPlaylistId);
         return newPlaylistId;
     }
@@ -93,7 +93,7 @@ public class Controller {
     }
 
     @PostMapping("/getAccessToken")
-    public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) {
+    public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) throws IOException {
         return Network.getAccessTokenAPICall(generatedCode);
     }
 
@@ -179,7 +179,7 @@ public class Controller {
                 Track track = new Track(features.getString("id"), false,
                         features.getDouble("tempo"), features.getDouble("instrumentalness"),
                         features.getInt("time_signature"));
-                trackDao.createTrackExtra(track);
+                trackDao.updateTrackFeatures(track);
             }
         }
     }

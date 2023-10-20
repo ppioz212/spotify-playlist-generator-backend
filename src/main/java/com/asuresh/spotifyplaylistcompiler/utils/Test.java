@@ -1,19 +1,20 @@
-package com.asuresh.spotifyplaylistcompiler.Utils;
+package com.asuresh.spotifyplaylistcompiler.utils;
 
 import com.asuresh.spotifyplaylistcompiler.model.Track;
+import com.google.gson.Gson;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.Response;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.List;
 
 public class Test {
-    public static void main(String[] args) {
-        String token = "BQAYGhZhPEncQVE5x_FrAFIcrKRBM_DH7pyhOC2n5bcyTZfGGvkujs5Blw5MtvNZjzpQ_I1I1CLN7IO8krvdwzBZvwTG3tuhLEZQJBQrbS1ep1LsyzzKL_gFvyyJiw9xoH6C7rVv90uk_tAJjZ5c3onU4JkncnPGUDt45MqQ34XoTn8L8L61a1VrmXjsiWkAi42wi6JLCajKgdOUSLi390S40t6Bq181h5gyl5d_F6jx";
-//        getTrackFeatures(token,);
+    public static void main(String[] args) throws IOException {
+
     }
     public static void getTrackFeatures(String accessToken, List<String> trackIds) throws IOException {
         OkHttpClient client = new OkHttpClient();
