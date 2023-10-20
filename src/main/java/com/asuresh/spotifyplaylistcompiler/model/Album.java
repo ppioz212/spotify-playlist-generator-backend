@@ -4,6 +4,7 @@ public class Album {
 
     private String id;
     private String name;
+    private String userId;
     private String artists;
     private String imageLink;
 
@@ -13,6 +14,14 @@ public class Album {
         this.id = id;
         this.name = name;
         this.artists = artists;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getArtists() {

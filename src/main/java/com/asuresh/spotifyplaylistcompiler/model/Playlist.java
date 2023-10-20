@@ -4,6 +4,7 @@ public class Playlist {
 
     private String id;
     private String name;
+    private String userId;
     private PlaylistTypeEnum type;
     private String owner;
     private String imageLink;
@@ -14,6 +15,13 @@ public class Playlist {
         this.id = id;
         this.name = name;
         this.owner = owner;
+    }
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public String getId() {

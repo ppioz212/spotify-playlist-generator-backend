@@ -26,6 +26,7 @@ public class Controller {
     private final JdbcPlaylistDao playlistDao;
     private final JdbcTrackDao trackDao;
     private List<String> finalTrackIds;
+    private String userId;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -94,7 +95,10 @@ public class Controller {
 
     @PostMapping("/getAccessToken")
     public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) throws IOException {
-        return Network.getAccessTokenAPICall(generatedCode);
+        Token token = Network.getAccessTokenAPICall(generatedCode);
+        JSONObject UserObj = Network.JsonGetRequest(token.getAccess_token(), "https://api.spotify.com/v1/me");
+        userId = UserObj.getString("id");
+        return token;
     }
 
     public void compileAlbumTrackIds(List<String> albumIds, String accessToken) throws IOException {
@@ -116,7 +120,6 @@ public class Controller {
             }
         }
     }
-
 
     public void compileUserSavedSongIds(String accessToken) throws IOException {
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
@@ -211,14 +214,12 @@ public class Controller {
     }
 
     public Playlist getPlaylistFromJson(String accessToken, JSONObject playlistItemData) throws IOException {
-        JSONObject UserObj = Network.JsonGetRequest(accessToken, "https://api.spotify.com/v1/me");
-        String userId = UserObj.getString("id");
-
         JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
         Playlist playlist = new Playlist();
         playlist.setId(playlistItemData.getString("id"));
         playlist.setName(playlistItemData.getString("name"));
         playlist.setOwner(playlistOwner.getString("id"));
+        playlist.setUserId(userId);
         if (playlist.getOwner().equals(userId)) {
             playlist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
         } else {
@@ -240,6 +241,7 @@ public class Controller {
         Album album = new Album();
         album.setId(albumData.getString("id"));
         album.setName(albumData.getString("name"));
+        album.setUserId(userId);
         album.setArtists(sb.toString());
         return album;
     }
@@ -252,6 +254,7 @@ public class Controller {
         Track track = new Track();
         track.setId(playlistItem.getJSONObject("track").getString("id"));
         track.setName(playlistItem.getJSONObject("track").getString("name"));
+        track.setUserId(userId);
         track.setLikedSong(isLikedSong);
         return track;
     }
@@ -263,6 +266,7 @@ public class Controller {
         Track track = new Track();
         track.setId(trackItem.getString("id"));
         track.setName(trackItem.getString("name"));
+        track.setUserId(userId);
         track.setLikedSong(isLikedSong);
         return track;
     }

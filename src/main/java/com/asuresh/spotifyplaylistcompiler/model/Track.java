@@ -3,6 +3,7 @@ package com.asuresh.spotifyplaylistcompiler.model;
 public class Track {
     private String id;
     private String name;
+    private String userId;
     private boolean likedSong;
     private double tempo;
     private double instrumentalness;
@@ -26,6 +27,14 @@ public class Track {
     public Track(String id, String name) {
         this.name = name;
         this.id = id;
+    }
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
     }
 
     public double getTempo() {
