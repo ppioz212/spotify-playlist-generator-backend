@@ -114,7 +114,7 @@ public class Controller {
                     }
                     finalTrackIds = addUniqueStringToList(finalTrackIds, currTrack.getId());
                     trackDao.createTrack(currTrack);
-                    albumDao.addAlbumToTrack(albumID, currTrack.getId());
+                    albumDao.linkTrackToAlbum(albumID, currTrack.getId());
                 }
                 albumTracksUrl = checkIfNextURLAvailable(obj);
             }
@@ -151,7 +151,7 @@ public class Controller {
                     }
                     finalTrackIds = addUniqueStringToList(finalTrackIds, currTrack.getId());
                     trackDao.createTrack(currTrack);
-                    playlistDao.addPlaylistToTrack(playlistID, currTrack.getId());
+                    playlistDao.linkTrackToPlaylist(playlistID, currTrack.getId());
                 }
                 playlistTracksUrl = checkIfNextURLAvailable(obj);
             }

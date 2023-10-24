@@ -21,16 +21,11 @@ public class JdbcPlaylistDao implements PlaylistDao {
     }
 
     @Override
-    public void insertTrackToPlaylist(String playlistID, String trackID) {
-
-    }
-
-    @Override
     public List<Playlist> getPlaylists() {
         return null;
     }
 
-    public void addPlaylistToTrack(String playlistID, String trackID) {
+    public void linkTrackToPlaylist(String playlistID, String trackID) {
         String sql = "INSERT INTO playlist_track (playlist_id, track_id) VALUES (?, ?);";
         jdbcTemplate.update(sql, playlistID, trackID);
     }

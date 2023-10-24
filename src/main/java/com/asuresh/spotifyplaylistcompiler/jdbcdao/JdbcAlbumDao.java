@@ -21,16 +21,11 @@ public class JdbcAlbumDao implements AlbumDao {
     }
 
     @Override
-    public void insertTrackToAlbum(String albumID, String trackID) {
-
-    }
-
-    @Override
     public List<Album> getAlbums() {
         return null;
     }
 
-    public void addAlbumToTrack(String albumID, String trackID) {
+    public void linkTrackToAlbum(String albumID, String trackID) {
         String sql = "INSERT INTO album_track (album_id, track_id) VALUES (?, ?);";
         jdbcTemplate.update(sql, albumID, trackID);
     }

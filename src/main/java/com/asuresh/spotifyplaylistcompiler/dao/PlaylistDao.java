@@ -6,6 +6,6 @@ import java.util.List;
 
 public interface PlaylistDao {
     void createPlaylist(Playlist playlist);
-    void insertTrackToPlaylist(String playlistID, String trackID);
+    void linkTrackToPlaylist(String playlistID, String trackID);
     List<Playlist> getPlaylists();
 }
