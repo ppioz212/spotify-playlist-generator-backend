@@ -16,8 +16,8 @@ public class JdbcAlbumDao implements AlbumDao {
 
     public void createAlbum(Album album) {
         String sql = "INSERT INTO album (id, name, artists) VALUES (?, ?, ?) ON CONFLICT (id) " +
-                "DO UPDATE SET name = ?";
-        jdbcTemplate.update(sql, album.getId(), album.getName(), album.getArtists(), album.getName());
+                "DO NOTHING";
+        jdbcTemplate.update(sql, album.getId(), album.getName(), album.getArtists());
     }
 
     @Override

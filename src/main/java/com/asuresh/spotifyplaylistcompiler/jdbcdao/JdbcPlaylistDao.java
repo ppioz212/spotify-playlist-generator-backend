@@ -16,8 +16,8 @@ public class JdbcPlaylistDao implements PlaylistDao {
 
     public void createPlaylist(Playlist playlist) {
         String sql = "INSERT INTO playlist (id, name, owner) VALUES (?, ?, ?) ON CONFLICT (id) " +
-                "DO UPDATE SET name = ?;";
-        jdbcTemplate.update(sql, playlist.getId(), playlist.getName(), playlist.getOwner(), playlist.getName());
+                "DO NOTHING;";
+        jdbcTemplate.update(sql, playlist.getId(), playlist.getName(), playlist.getOwner());
     }
 
     @Override

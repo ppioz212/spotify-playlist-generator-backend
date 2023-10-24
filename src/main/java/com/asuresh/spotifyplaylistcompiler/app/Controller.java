@@ -26,7 +26,7 @@ public class Controller {
     private final JdbcPlaylistDao playlistDao;
     private final JdbcTrackDao trackDao;
     private List<String> finalTrackIds;
-    private String userId;
+    private User user;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -40,6 +40,7 @@ public class Controller {
 
     @PostMapping("/generateNewPlaylist")
     public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody PlaylistDTO playlistDTO, @RequestHeader("Authorization") String accessToken) throws IOException {
+        user = getUser(accessToken);
         finalTrackIds = new ArrayList<>();
         if (playlistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
@@ -53,7 +54,7 @@ public class Controller {
         if (playlistDTO.isAddLikedSongs()) {
             compileUserSavedSongIds(accessToken);
         }
-        getTrackFeatures(accessToken);
+//        getTrackFeatures(accessToken);
         String newPlaylistId = createNewPlaylist(accessToken, playlistDTO.getNameOfPlaylist(), "");
         addTrackItemsToNewPlaylist(accessToken, newPlaylistId);
         return newPlaylistId;
@@ -61,6 +62,7 @@ public class Controller {
 
     @GetMapping("/getPlaylists")
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
+        user = getUser(accessToken);
         List<Playlist> playlists = new ArrayList<>();
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (playlistUrl != null) {
@@ -78,6 +80,7 @@ public class Controller {
 
     @GetMapping("/getAlbums")
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
+        user = getUser(accessToken);
         List<Album> albums = new ArrayList<>();
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (albumUrl != null) {
@@ -95,10 +98,7 @@ public class Controller {
 
     @PostMapping("/getAccessToken")
     public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) throws IOException {
-        Token token = Network.getAccessTokenAPICall(generatedCode);
-        JSONObject UserObj = Network.JsonGetRequest(token.getAccess_token(), "https://api.spotify.com/v1/me");
-        userId = UserObj.getString("id");
-        return token;
+        return Network.getAccessTokenAPICall(generatedCode);
     }
 
     public void compileAlbumTrackIds(List<String> albumIds, String accessToken) throws IOException {
@@ -127,7 +127,7 @@ public class Controller {
             JSONObject obj = Network.JsonGetRequest(accessToken, savedSongsUrl);
             JSONArray savedSongsItems = obj.getJSONArray("items");
             for (int i = 0; i < savedSongsItems.length(); i++) {
-                Track currTrack = getTrackFromPlaylistJson(savedSongsItems.getJSONObject(i),false);
+                Track currTrack = getTrackFromPlaylistJson(savedSongsItems.getJSONObject(i),true);
                 if (currTrack == null) {
                     continue;
                 }
@@ -200,13 +200,14 @@ public class Controller {
     }
 
     public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId) throws IOException {
-        int numberOfTimesToAddTracks = finalTrackIds.size() / 100 + 1;
+        System.out.println(finalTrackIds.size());
+        int numberOfTimesToAddTracks = finalTrackIds.size() / 99 + 1;
         int j = 0;
         for (int i = 0; i < numberOfTimesToAddTracks; i++) {
             JSONArray trackListURIsArray = new JSONArray();
             for (; j < finalTrackIds.size(); j++) {
                 trackListURIsArray.put("spotify:track:" + finalTrackIds.get(j));
-                if (j % 100 == 99 && j != 0) {
+                if (j % 99 == 98 && j != 0) {
                     j++;
                     break;
                 }
@@ -223,8 +224,8 @@ public class Controller {
         playlist.setId(playlistItemData.getString("id"));
         playlist.setName(playlistItemData.getString("name"));
         playlist.setOwner(playlistOwner.getString("id"));
-        playlist.setUserId(userId);
-        if (playlist.getOwner().equals(userId)) {
+        playlist.setUserId(user.getId());
+        if (playlist.getOwner().equals(user.getId())) {
             playlist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
         } else {
             playlist.setType(PlaylistTypeEnum.ALL_FOLLOWED_PLAYLISTS);
@@ -245,7 +246,7 @@ public class Controller {
         Album album = new Album();
         album.setId(albumData.getString("id"));
         album.setName(albumData.getString("name"));
-        album.setUserId(userId);
+        album.setUserId(user.getId());
         album.setArtists(sb.toString());
         return album;
     }
@@ -258,7 +259,7 @@ public class Controller {
         Track track = new Track();
         track.setId(playlistItem.getJSONObject("track").getString("id"));
         track.setName(playlistItem.getJSONObject("track").getString("name"));
-        track.setUserId(userId);
+        track.setUserId(user.getId());
         track.setLikedSong(isLikedSong);
         return track;
     }
@@ -270,9 +271,15 @@ public class Controller {
         Track track = new Track();
         track.setId(trackItem.getString("id"));
         track.setName(trackItem.getString("name"));
-        track.setUserId(userId);
+        track.setUserId(user.getId());
         track.setLikedSong(isLikedSong);
         return track;
     }
-
+    public User getUser(String accessToken) throws IOException {
+        JSONObject userObj = Network.JsonGetRequest(accessToken, "https://api.spotify.com/v1/me");
+        User user = new User();
+        user.setId(userObj.getString("id"));
+        user.setDisplayName(userObj.getString("display_name"));
+        return user;
+    }
 }
