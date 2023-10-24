@@ -8,7 +8,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import java.util.List;
 
-public class JdbcPlaylistDao implements PlaylistDao {
+public class JdbcPlaylistDao {
     private final JdbcTemplate jdbcTemplate;
 
     public JdbcPlaylistDao(DataSource dataSource) {
@@ -33,7 +33,6 @@ public class JdbcPlaylistDao implements PlaylistDao {
                 user.getDisplayName());
     }
 
-    @Override
     public List<Playlist> getPlaylists() {
         return null;
     }

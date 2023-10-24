@@ -1,7 +1,9 @@
 package com.asuresh.spotifyplaylistcompiler.model;
+import com.google.gson.annotations.SerializedName;
 
 public class User {
     private String id;
+    @SerializedName("display_name")
     private String displayName;
 
     public User() {}

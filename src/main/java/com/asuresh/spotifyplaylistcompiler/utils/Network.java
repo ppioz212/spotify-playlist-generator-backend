@@ -1,9 +1,13 @@
 package com.asuresh.spotifyplaylistcompiler.utils;
 
 import com.asuresh.spotifyplaylistcompiler.model.Token;
+import com.asuresh.spotifyplaylistcompiler.model.User;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.json.JSONObject;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -15,6 +19,7 @@ public abstract class Network {
     public static final MediaType JSON = MediaType.get("application/json");
     private static final OkHttpClient client = new OkHttpClient();
     private static final Gson gson = new Gson();
+    private final RestTemplate restTemplate = new RestTemplate();
 
     public static JSONObject JsonGetRequest(String accessToken, String URL) throws IOException {
         Request request = new Request.Builder()
@@ -27,6 +32,11 @@ public abstract class Network {
             assert response.body() != null;
             return new JSONObject(response.body().string());
         }
+    }
+
+    public static User getUser(String accessToken) throws IOException {
+        JSONObject userObj = JsonGetRequest(accessToken, "https://api.spotify.com/v1/me");
+        return gson.fromJson(String.valueOf(userObj),User.class);
     }
 
     public static JSONObject JsonPostRequest(String accessToken, String URL, JSONObject data) throws IOException {

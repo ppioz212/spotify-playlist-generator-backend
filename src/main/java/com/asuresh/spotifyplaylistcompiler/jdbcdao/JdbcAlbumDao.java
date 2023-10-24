@@ -7,7 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import java.util.List;
 
-public class JdbcAlbumDao implements AlbumDao {
+public class JdbcAlbumDao {
     private final JdbcTemplate jdbcTemplate;
 
     public JdbcAlbumDao(DataSource dataSource) {
@@ -24,7 +24,6 @@ public class JdbcAlbumDao implements AlbumDao {
                 album.getUserId());
     }
 
-    @Override
     public List<Album> getAlbums() {
         return null;
     }
