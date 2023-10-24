@@ -15,9 +15,13 @@ public class JdbcAlbumDao implements AlbumDao {
     }
 
     public void createAlbum(Album album) {
-        String sql = "INSERT INTO album (id, name, artists) VALUES (?, ?, ?) ON CONFLICT (id) " +
+        String sql = "INSERT INTO album (id, name, artists, user_id) VALUES (?, ?, ?, ?) ON CONFLICT (id) " +
                 "DO NOTHING";
-        jdbcTemplate.update(sql, album.getId(), album.getName(), album.getArtists());
+        jdbcTemplate.update(sql,
+                album.getId(),
+                album.getName(),
+                album.getArtists(),
+                album.getUserId());
     }
 
     @Override

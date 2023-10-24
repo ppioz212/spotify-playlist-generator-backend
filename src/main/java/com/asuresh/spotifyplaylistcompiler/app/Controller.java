@@ -63,6 +63,7 @@ public class Controller {
     @GetMapping("/getPlaylists")
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = getUser(accessToken);
+        playlistDao.createUser(user);
         List<Playlist> playlists = new ArrayList<>();
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (playlistUrl != null) {
@@ -280,6 +281,7 @@ public class Controller {
         User user = new User();
         user.setId(userObj.getString("id"));
         user.setDisplayName(userObj.getString("display_name"));
+
         return user;
     }
 }

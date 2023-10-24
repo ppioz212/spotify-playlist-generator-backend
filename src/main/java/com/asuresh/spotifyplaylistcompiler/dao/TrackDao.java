@@ -11,6 +11,6 @@ public interface TrackDao {
     List<Track> getTracks(int startTempoRange, int endTempoRange,
                           List<String> albumsToAdd, List<String> playlistsToAdd,
                           boolean addLikedSongs);
-    Integer getMaxTempoOfTracks();
-    Integer getMinTempoOfTracks();
+    int getMaxTempoOfTracks();
+    int getMinTempoOfTracks();
 }

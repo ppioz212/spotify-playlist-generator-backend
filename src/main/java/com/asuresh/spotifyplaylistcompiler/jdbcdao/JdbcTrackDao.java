@@ -4,6 +4,8 @@ package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 import com.asuresh.spotifyplaylistcompiler.dao.TrackDao;
 import com.asuresh.spotifyplaylistcompiler.model.Track;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.SqlInOutParameter;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import javax.sql.DataSource;
 import java.util.List;
@@ -17,9 +19,14 @@ public class JdbcTrackDao implements TrackDao {
 
     @Override
     public void createTrack(Track track) {
-        String sql = "INSERT INTO track (id, name, liked_song) VALUES (?, ?, ?) ON CONFLICT (id) " +
+        String sql = "INSERT INTO track (id, name, liked_song, user_id) VALUES (?, ?, ?, ?) ON CONFLICT (id) " +
                 "DO UPDATE SET liked_song = ?;";
-        jdbcTemplate.update(sql, track.getId(), track.getName(), track.isLikedSong(), track.isLikedSong());
+        jdbcTemplate.update(sql,
+                track.getId(),
+                track.getName(),
+                track.isLikedSong(),
+                track.getUserId(),
+                track.isLikedSong());
     }
 
     @Override
@@ -43,12 +50,24 @@ public class JdbcTrackDao implements TrackDao {
     }
 
     @Override
-    public Integer getMaxTempoOfTracks() {
-        return null;
+    public int getMaxTempoOfTracks() {
+        int maxTempo = 0;
+        String sql = "SELECT MAX(tempo) AS max_tempo FROM track;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        if (results.next()) {
+            maxTempo = results.getInt("max_tempo");
+        }
+        return maxTempo;
     }
 
     @Override
-    public Integer getMinTempoOfTracks() {
-        return null;
+    public int getMinTempoOfTracks() {
+        int minTempo = 0;
+        String sql = "SELECT MIN(tempo) AS min_tempo FROM track;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        if (results.next()) {
+            minTempo = results.getInt("min_tempo");
+        }
+        return minTempo;
     }
 }
