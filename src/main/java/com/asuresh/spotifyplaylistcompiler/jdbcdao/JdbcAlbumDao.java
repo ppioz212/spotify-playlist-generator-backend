@@ -14,22 +14,22 @@ public class JdbcAlbumDao {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void createAlbum(Album album) {
+    public void createAlbum(Album album, String user_id) {
         String sql = "INSERT INTO album (id, name, artists, user_id) VALUES (?, ?, ?, ?) ON CONFLICT (id) " +
                 "DO NOTHING";
         jdbcTemplate.update(sql,
                 album.getId(),
                 album.getName(),
                 album.getArtists(),
-                album.getUserId());
+                user_id);
     }
 
     public List<Album> getAlbums() {
         return null;
     }
 
-    public void linkTrackToAlbum(String albumID, String trackID) {
+    public void linkTrackToAlbum(String albumId, String trackId) {
         String sql = "INSERT INTO album_track (album_id, track_id) VALUES (?, ?);";
-        jdbcTemplate.update(sql, albumID, trackID);
+        jdbcTemplate.update(sql, albumId, trackId);
     }
 }

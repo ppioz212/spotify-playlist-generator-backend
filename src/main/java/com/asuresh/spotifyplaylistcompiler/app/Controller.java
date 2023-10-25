@@ -1,8 +1,7 @@
 package com.asuresh.spotifyplaylistcompiler.app;
 
 import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcUserDao;
-import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.PlaylistM;
-import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.PlaylistTypeEnum;
+import com.asuresh.spotifyplaylistcompiler.model.PlaylistM;
 import com.asuresh.spotifyplaylistcompiler.utils.Network;
 import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcTrackDao;
 import com.asuresh.spotifyplaylistcompiler.model.*;
@@ -32,7 +31,7 @@ public class Controller {
     private final JdbcUserDao userDao;
     private List<String> finalTrackIds;
     private User user;
-    private Gson gson;
+    private final Gson gson;
 
     Controller() {
         BasicDataSource dataSource = new BasicDataSource();
@@ -69,25 +68,18 @@ public class Controller {
     }
 
     @GetMapping("/getPlaylists")
-    public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
+    public List<PlaylistM> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = Network.getUser(accessToken);
         userDao.createUser(user);
-        List<Playlist> playlists = new ArrayList<>();
+        List<PlaylistM> playlists = new ArrayList<>();
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (playlistUrl != null) {
             JSONObject obj = Network.JsonGetRequest(accessToken, playlistUrl);
             PlaylistM[] playlistMs = gson.fromJson(
                     String.valueOf(obj.getJSONArray("items")), PlaylistM[].class);
-            JSONArray playlistItems = obj.getJSONArray("items");
             for (PlaylistM pe : playlistMs) {
-
-                System.out.println(pe.getOwner().getId());
-                System.out.println(pe.getName());
-            }
-            for (int i = 0; i < playlistItems.length(); i++) {
-                Playlist playlist = getPlaylistFromJson(accessToken, playlistItems.getJSONObject(i));
-                playlists.add(playlist);
-                playlistDao.createPlaylist(playlist);
+                playlists.add(pe);
+                playlistDao.createPlaylist(pe, user.getId());
             }
             playlistUrl = checkIfNextURLAvailable(obj);
         }
@@ -105,7 +97,7 @@ public class Controller {
             for (int i = 0; i < albumItems.length(); i++) {
                 Album album = getAlbumFromJson(albumItems.getJSONObject(i).getJSONObject("album"));
                 albums.add(album);
-                albumDao.createAlbum(album);
+                albumDao.createAlbum(album, user.getId());
             }
             albumUrl = checkIfNextURLAvailable(obj);
         }
@@ -115,6 +107,11 @@ public class Controller {
     @PostMapping("/getAccessToken")
     public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) throws IOException {
         return Network.getAccessTokenAPICall(generatedCode);
+    }
+
+    @GetMapping("/getUser")
+    public User GetUser(@RequestHeader("Authorization") String accessToken) throws IOException {
+        return Network.getUser(accessToken);
     }
 
     public void compileAlbumTrackIds(List<String> albumIds, String accessToken) throws IOException {
@@ -225,21 +222,6 @@ public class Controller {
             String addTracksToPlaylistUrl = "https://api.spotify.com/v1/playlists/" + newPlaylistId + "/tracks";
             Network.JsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
         }
-    }
-
-    public Playlist getPlaylistFromJson(String accessToken, JSONObject playlistItemData) throws IOException {
-        JSONObject playlistOwner = playlistItemData.getJSONObject("owner");
-        Playlist playlist = new Playlist();
-        playlist.setId(playlistItemData.getString("id"));
-        playlist.setName(playlistItemData.getString("name"));
-        playlist.setOwner(playlistOwner.getString("id"));
-        playlist.setUserId(user.getId());
-        if (playlist.getOwner().equals(user.getId())) {
-            playlist.setType(PlaylistTypeEnum.ALL_USER_CREATED);
-        } else {
-            playlist.setType(PlaylistTypeEnum.ALL_FOLLOWED_PLAYLISTS);
-        }
-        return playlist;
     }
 
     public Album getAlbumFromJson(JSONObject albumData) {

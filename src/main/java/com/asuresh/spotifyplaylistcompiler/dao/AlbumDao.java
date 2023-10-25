@@ -6,7 +6,7 @@ import java.util.List;
 
 public interface AlbumDao {
 
-    void createAlbum(Album album);
-    void linkTrackToAlbum(String albumID, String trackID);
+    void createAlbum(Album album, String userId);
+    void linkTrackToAlbum(String albumId, String trackId);
     List<Album> getAlbums();
 }

@@ -1,4 +1,5 @@
-package com.asuresh.spotifyplaylistcompiler.model.playlistmodel;
+package com.asuresh.spotifyplaylistcompiler.model;
+import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.*;
 import com.google.gson.annotations.SerializedName;
 
 import java.util.ArrayList;
