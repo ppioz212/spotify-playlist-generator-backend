@@ -1,7 +1,6 @@
 package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 
 import com.asuresh.spotifyplaylistcompiler.model.Playlist;
-import com.asuresh.spotifyplaylistcompiler.model.PlaylistM;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 import javax.sql.DataSource;
@@ -14,7 +13,7 @@ public class JdbcPlaylistDao {
         jdbcTemplate = new JdbcTemplate(dataSource);
     }
 
-    public void createPlaylist(PlaylistM playlist, String userId) {
+    public void createPlaylist(Playlist playlist, String userId) {
         String sql = "INSERT INTO playlist (id, name, owner, user_id) VALUES (?, ?, ?, ?) ON CONFLICT (id) " +
                 "DO NOTHING;";
         jdbcTemplate.update(sql,

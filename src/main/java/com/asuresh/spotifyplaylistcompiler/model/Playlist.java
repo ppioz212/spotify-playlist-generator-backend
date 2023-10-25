@@ -1,68 +1,82 @@
 package com.asuresh.spotifyplaylistcompiler.model;
+import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.*;
+import com.google.gson.annotations.SerializedName;
 
-import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.PlaylistTypeEnum;
+import java.util.ArrayList;
 
 public class Playlist {
-
+    private boolean collaborative;
+    private String description;
+    @SerializedName("external_urls")
+    private ExternalUrls externalUrls;
+    private String href;
     private String id;
+    private ArrayList<Image> images;
     private String name;
-    private String userId;
-    private PlaylistTypeEnum type;
-    private String owner;
-    private String imageLink;
+    private Owner owner;
+    @SerializedName("public")
+    private boolean isPublic;
+    @SerializedName("snapshot_id")
+    private String snapshotId;
+    private Tracks tracks;
+    private String type;
+    private String uri;
+    private PlaylistTypeEnum uiPlaylistType;
 
-    public Playlist() {}
-
-    public Playlist(String id, String name, String owner) {
-        this.id = id;
-        this.name = name;
-        this.owner = owner;
-    }
-    public String getUserId() {
-        return userId;
+    public void setUiPlaylistType(PlaylistTypeEnum uiPlaylistType) {
+        this.uiPlaylistType = uiPlaylistType;
     }
 
-    public void setUserId(String userId) {
-        this.userId = userId;
+    public boolean isCollaborative() {
+        return collaborative;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public ExternalUrls getExternalUrls() {
+        return externalUrls;
+    }
+
+    public String getHref() {
+        return href;
     }
 
     public String getId() {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public ArrayList<Image> getImages() {
+        return images;
     }
 
     public String getName() {
         return name;
     }
 
-    public void setName(String name) {
-        this.name = name;
-    }
-
-    public PlaylistTypeEnum getType() {
-        return type;
-    }
-
-    public void setType(PlaylistTypeEnum type) {
-        this.type = type;
-    }
-
-    public String getOwner() {
+    public Owner getOwner() {
         return owner;
     }
 
-    public void setOwner(String owner) {
-        this.owner = owner;
+    public boolean isPublic() {
+        return isPublic;
     }
 
-    public String getImageLink() {
-        return imageLink;
+    public String getSnapshotId() {
+        return snapshotId;
     }
 
-    public void setImageLink(String imageLink) {
-        this.imageLink = imageLink;
+    public Tracks getTracks() {
+        return tracks;
+    }
+
+    public String getType() {
+        return type;
+    }
+
+    public String getUri() {
+        return uri;
     }
 }
+
