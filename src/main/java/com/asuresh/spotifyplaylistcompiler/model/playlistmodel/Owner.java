@@ -12,6 +12,11 @@ public class Owner {
     @SerializedName("display_name")
     private String displayName;
 
+    public Owner() {}
+    public Owner(String id, String displayName) {
+        this.id = id;
+        this.displayName = displayName;
+    }
     public ExternalUrls getExternal_urls() {
         return external_urls;
     }

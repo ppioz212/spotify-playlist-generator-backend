@@ -83,6 +83,7 @@ public class Controller {
             }
             playlistUrl = checkIfNextURLAvailable(obj);
         }
+//        return playlistDao.getPlaylists();
         return allPlaylists;
     }
 
@@ -101,6 +102,7 @@ public class Controller {
             }
             albumUrl = checkIfNextURLAvailable(obj);
         }
+//        return albumDao.getAlbums();
         return allAlbums;
     }
 

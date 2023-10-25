@@ -21,10 +21,17 @@ public class Playlist {
     private Tracks tracks;
     private String type;
     private String uri;
-    private PlaylistTypeEnum uiPlaylistType;
 
-    public void setUiPlaylistType(PlaylistTypeEnum uiPlaylistType) {
-        this.uiPlaylistType = uiPlaylistType;
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setOwner(Owner owner) {
+        this.owner = owner;
     }
 
     public boolean isCollaborative() {

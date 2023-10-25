@@ -3,8 +3,10 @@ package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.model.Album;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.support.rowset.SqlRowSet;
 
 import javax.sql.DataSource;
+import java.util.ArrayList;
 import java.util.List;
 
 public class JdbcAlbumDao {
@@ -25,7 +27,21 @@ public class JdbcAlbumDao {
     }
 
     public List<Album> getAlbums() {
-        return null;
+        List<Album> albums = new ArrayList<>();
+        String sql = "SELECT * FROM album;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        while (results.next()) {
+            albums.add(mapRowToAlbum(results));
+        }
+        return albums;
+    }
+
+    private Album mapRowToAlbum(SqlRowSet results) {
+        Album album = new Album();
+        album.setUserId(results.getString("id"));
+        album.setName(results.getString("name"));
+        album.setArtists(results.getString("artists"));
+        return album;
     }
 
     public void linkTrackToAlbum(String albumId, String trackId) {
