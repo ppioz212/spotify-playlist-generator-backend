@@ -1,5 +1,7 @@
 package com.asuresh.spotifyplaylistcompiler.dao;
 
+import com.asuresh.spotifyplaylistcompiler.model.Playlist;
+
 import java.util.List;
 
 public interface PlaylistDao {
