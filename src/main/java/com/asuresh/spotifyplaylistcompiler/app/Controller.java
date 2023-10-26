@@ -13,6 +13,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -46,9 +47,16 @@ public class Controller {
     }
 
     @PostMapping("/generateNewPlaylist")
-    public String generateNewPlaylist(@org.springframework.web.bind.annotation.RequestBody NewPlaylistDTO newPlaylistDTO, @RequestHeader("Authorization") String accessToken) throws IOException {
+    public String generateNewPlaylist(
+            @RequestBody NewPlaylistDTO newPlaylistDTO,
+            @RequestHeader("Authorization") String accessToken) throws IOException {
         user = Network.getUser(accessToken);
         finalTrackIds = new ArrayList<>();
+//        List<Playlist> playlists = playlistDao.getPlaylists(List.of("2GslgUGoR4fMWZzRsaZGZI", "7cEML8yUXVC6SKoXHaYl1t"));
+        List<Playlist> playlists = playlistDao.getPlaylists(finalTrackIds);
+        for (Playlist playlist : playlists) {
+            System.out.println(playlist.getName() + " " + playlist.getId());
+        }
         if (newPlaylistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
@@ -70,6 +78,10 @@ public class Controller {
     @GetMapping("/getPlaylists")
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = Network.getUser(accessToken);
+//        if (userDao.checkUserExist(user)) {
+//            System.out.println("Playlists got from sql");
+//            return playlistDao.getPlaylists();
+//        }
         userDao.createUser(user);
         List<Playlist> allPlaylists = new ArrayList<>();
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
@@ -83,13 +95,16 @@ public class Controller {
             }
             playlistUrl = checkIfNextURLAvailable(obj);
         }
-//        return playlistDao.getPlaylists();
         return allPlaylists;
     }
 
     @GetMapping("/getAlbums")
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = Network.getUser(accessToken);
+//        if (userDao.checkUserExist(user)) {
+//            System.out.println("Albums got from sql");
+//            return albumDao.getAlbums();
+//        }
         List<Album> allAlbums = new ArrayList<>();
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (albumUrl != null) {
@@ -102,12 +117,11 @@ public class Controller {
             }
             albumUrl = checkIfNextURLAvailable(obj);
         }
-//        return albumDao.getAlbums();
         return allAlbums;
     }
 
     @PostMapping("/getAccessToken")
-    public Token getAccessToken(@org.springframework.web.bind.annotation.RequestBody String generatedCode) throws IOException {
+    public Token getAccessToken(@RequestBody String generatedCode) throws IOException {
         return Network.getAccessTokenAPICall(generatedCode);
     }
 
@@ -223,6 +237,9 @@ public class Controller {
             JSONObject trackListUrisObj = new JSONObject(Map.of("uris", trackListURIsArray));
             String addTracksToPlaylistUrl = "https://api.spotify.com/v1/playlists/" + newPlaylistId + "/tracks";
             Network.JsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
+        }
+        for (String trackId : finalTrackIds) {
+            playlistDao.linkTrackToPlaylist(newPlaylistId, trackId);
         }
     }
 

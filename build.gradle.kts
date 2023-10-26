@@ -28,6 +28,7 @@ dependencies {
 	implementation("org.json:json:20230618")
 	implementation("org.postgresql:postgresql:42.6.0")
 	implementation("org.apache.commons:commons-dbcp2:2.10.0")
+    testImplementation("junit:junit:4.13.1")
 
 }
 
