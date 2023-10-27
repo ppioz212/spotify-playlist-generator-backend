@@ -50,7 +50,6 @@ public class MainController {
             @RequestHeader("Authorization") String accessToken) throws IOException {
         user = SpotifyService.getUser(accessToken);
         finalTrackIds = new ArrayList<>();
-        userDao.updateDataPulled(TableType.PLAYLIST, true, user.getId());
 //        List<Playlist> playlists = playlistDao.getPlaylists(List.of("2GslgUGoR4fMWZzRsaZGZI", "7cEML8yUXVC6SKoXHaYl1t"));
 //        List<Playlist> playlists = playlistDao.getPlaylists(finalTrackIds);
 //        for (Playlist playlist : playlists) {
