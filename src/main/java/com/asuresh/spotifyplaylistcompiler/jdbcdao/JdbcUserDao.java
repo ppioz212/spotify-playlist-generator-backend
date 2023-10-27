@@ -26,4 +26,18 @@ public class JdbcUserDao {
         SqlRowSet result = jdbcTemplate.queryForRowSet(sql, user.getId());
         return result.next();
     }
+
+    public void updateDataPulled(TableType tableType, boolean value, String userId) {
+        String sql = "UPDATE user_profile " +
+                "SET " + tableType.getValue() + "_pulled = ? " +
+                "WHERE id = ?";
+        jdbcTemplate.update(sql, value, userId);
+    }
+
+    public boolean wasDataPreviouslyPulled(TableType tableType, String userId) {
+        String sql = "SELECT " + tableType.getValue() + "_pulled " +
+                "FROM user_profile " +
+                "WHERE id = ?";
+        return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, boolean.class, userId));
+    }
 }

@@ -1,12 +1,10 @@
-package com.asuresh.spotifyplaylistcompiler.utils;
+package com.asuresh.spotifyplaylistcompiler.services;
 
 import com.asuresh.spotifyplaylistcompiler.model.Token;
 import com.asuresh.spotifyplaylistcompiler.model.User;
 import com.google.gson.Gson;
 import okhttp3.*;
 import org.json.JSONObject;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
 import org.springframework.web.client.RestTemplate;
 
 import java.io.IOException;
@@ -15,7 +13,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.Base64;
 
-public abstract class Network {
+public abstract class SpotifyService {
     public static final MediaType JSON = MediaType.get("application/json");
     private static final OkHttpClient client = new OkHttpClient();
     private static final Gson gson = new Gson();
@@ -56,9 +54,9 @@ public abstract class Network {
     }
 
     public static Token getAccessTokenAPICall(String generatedCode) throws IOException {
-        final Config config;
-        Reader reader = Files.newBufferedReader(Paths.get("config.json"));
-        config = gson.fromJson(reader, Config.class);
+        final ClientConfig config;
+        Reader reader = Files.newBufferedReader(Paths.get("clientconfig.json"));
+        config = gson.fromJson(reader, ClientConfig.class);
         final String redirectUri = "http://localhost:3000";
         String authHeader = config.getClientId() + ":" + config.getSecretClientId();
         String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());

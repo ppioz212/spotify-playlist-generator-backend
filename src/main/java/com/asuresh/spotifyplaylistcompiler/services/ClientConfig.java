@@ -1,11 +1,11 @@
-package com.asuresh.spotifyplaylistcompiler.utils;
+package com.asuresh.spotifyplaylistcompiler.services;
 
-public class Config {
+public class ClientConfig {
     private String clientId;
     private String secretClientId;
 
-    public Config() {}
-    public Config(String clientId, String secretClientId) {
+    public ClientConfig() {}
+    public ClientConfig(String clientId, String secretClientId) {
         this.clientId = clientId;
         this.secretClientId = secretClientId;
     }

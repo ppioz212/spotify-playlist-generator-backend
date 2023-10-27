@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler.app;
+package com.asuresh.spotifyplaylistcompiler;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
@@ -12,9 +12,9 @@ import java.io.IOException;
         DataSourceAutoConfiguration.class,
 }
 )
-public class Application {
+public class SpotifyApplication {
 
     public static void main(String[] args) throws IOException {
-        SpringApplication.run(Application.class, args);
+        SpringApplication.run(SpotifyApplication.class, args);
     }
 }

@@ -1,12 +1,10 @@
-package com.asuresh.spotifyplaylistcompiler.app;
+package com.asuresh.spotifyplaylistcompiler.controllers;
 
-import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcUserDao;
+import com.asuresh.spotifyplaylistcompiler.jdbcdao.*;
+import com.asuresh.spotifyplaylistcompiler.services.NewPlaylistDTO;
 import com.asuresh.spotifyplaylistcompiler.model.Playlist;
-import com.asuresh.spotifyplaylistcompiler.utils.Network;
-import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcTrackDao;
+import com.asuresh.spotifyplaylistcompiler.services.SpotifyService;
 import com.asuresh.spotifyplaylistcompiler.model.*;
-import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcAlbumDao;
-import com.asuresh.spotifyplaylistcompiler.jdbcdao.JdbcPlaylistDao;
 import com.google.gson.Gson;
 import org.apache.commons.dbcp2.BasicDataSource;
 import org.json.JSONArray;
@@ -25,7 +23,7 @@ import java.util.Map;
 import static com.asuresh.spotifyplaylistcompiler.utils.MiscFunctions.*;
 
 @RestController
-public class Controller {
+public class MainController {
     private final JdbcAlbumDao albumDao;
     private final JdbcPlaylistDao playlistDao;
     private final JdbcTrackDao trackDao;
@@ -34,7 +32,7 @@ public class Controller {
     private User user;
     private final Gson gson;
 
-    Controller() {
+    MainController() {
         BasicDataSource dataSource = new BasicDataSource();
         dataSource.setUsername("postgres");
         dataSource.setUrl("jdbc:postgresql://localhost:5432/spotifyData");
@@ -50,13 +48,14 @@ public class Controller {
     public String generateNewPlaylist(
             @RequestBody NewPlaylistDTO newPlaylistDTO,
             @RequestHeader("Authorization") String accessToken) throws IOException {
-        user = Network.getUser(accessToken);
+        user = SpotifyService.getUser(accessToken);
         finalTrackIds = new ArrayList<>();
+        userDao.updateDataPulled(TableType.PLAYLIST, true, user.getId());
 //        List<Playlist> playlists = playlistDao.getPlaylists(List.of("2GslgUGoR4fMWZzRsaZGZI", "7cEML8yUXVC6SKoXHaYl1t"));
-        List<Playlist> playlists = playlistDao.getPlaylists(finalTrackIds);
-        for (Playlist playlist : playlists) {
-            System.out.println(playlist.getName() + " " + playlist.getId());
-        }
+//        List<Playlist> playlists = playlistDao.getPlaylists(finalTrackIds);
+//        for (Playlist playlist : playlists) {
+//            System.out.println(playlist.getName() + " " + playlist.getId());
+//        }
         if (newPlaylistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
@@ -77,7 +76,7 @@ public class Controller {
 
     @GetMapping("/getPlaylists")
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
-        user = Network.getUser(accessToken);
+        user = SpotifyService.getUser(accessToken);
 //        if (userDao.checkUserExist(user)) {
 //            System.out.println("Playlists got from sql");
 //            return playlistDao.getPlaylists();
@@ -86,7 +85,7 @@ public class Controller {
         List<Playlist> allPlaylists = new ArrayList<>();
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (playlistUrl != null) {
-            JSONObject obj = Network.JsonGetRequest(accessToken, playlistUrl);
+            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, playlistUrl);
             Playlist[] playlists = gson.fromJson(
                     String.valueOf(obj.getJSONArray("items")), Playlist[].class);
             for (Playlist playlist : playlists) {
@@ -100,7 +99,7 @@ public class Controller {
 
     @GetMapping("/getAlbums")
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
-        user = Network.getUser(accessToken);
+        user = SpotifyService.getUser(accessToken);
 //        if (userDao.checkUserExist(user)) {
 //            System.out.println("Albums got from sql");
 //            return albumDao.getAlbums();
@@ -108,7 +107,7 @@ public class Controller {
         List<Album> allAlbums = new ArrayList<>();
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (albumUrl != null) {
-            JSONObject obj = Network.JsonGetRequest(accessToken, albumUrl);
+            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, albumUrl);
             JSONArray albumItems = obj.getJSONArray("items");
             for (int i = 0; i < albumItems.length(); i++) {
                 Album album = getAlbumFromJson(albumItems.getJSONObject(i).getJSONObject("album"));
@@ -122,19 +121,19 @@ public class Controller {
 
     @PostMapping("/getAccessToken")
     public Token getAccessToken(@RequestBody String generatedCode) throws IOException {
-        return Network.getAccessTokenAPICall(generatedCode);
+        return SpotifyService.getAccessTokenAPICall(generatedCode);
     }
 
     @GetMapping("/getUser")
     public User GetUser(@RequestHeader("Authorization") String accessToken) throws IOException {
-        return Network.getUser(accessToken);
+        return SpotifyService.getUser(accessToken);
     }
 
     public void compileAlbumTrackIds(List<String> albumIds, String accessToken) throws IOException {
         for (String albumID : albumIds) {
             String albumTracksUrl = "https://api.spotify.com/v1/albums/" + albumID + "/tracks?limit=50";
             while (albumTracksUrl != null) {
-                JSONObject obj = Network.JsonGetRequest(accessToken, albumTracksUrl);
+                JSONObject obj = SpotifyService.JsonGetRequest(accessToken, albumTracksUrl);
                 JSONArray albumItems = obj.getJSONArray("items");
                 for (int i = 0; i < albumItems.length(); i++) {
                     Track track = getTrackFromAlbumJson(albumItems.getJSONObject(i), false);
@@ -153,7 +152,7 @@ public class Controller {
     public void compileUserSavedSongIds(String accessToken) throws IOException {
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
         while (savedSongsUrl != null) {
-            JSONObject obj = Network.JsonGetRequest(accessToken, savedSongsUrl);
+            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, savedSongsUrl);
             JSONArray savedSongsItems = obj.getJSONArray("items");
             for (int i = 0; i < savedSongsItems.length(); i++) {
                 Track track = getTrackFromPlaylistJson(savedSongsItems.getJSONObject(i), true);
@@ -171,7 +170,7 @@ public class Controller {
         for (String playlistID : playlistIds) {
             String playlistTracksUrl = "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50";
             while (playlistTracksUrl != null) {
-                JSONObject obj = Network.JsonGetRequest(accessToken, playlistTracksUrl);
+                JSONObject obj = SpotifyService.JsonGetRequest(accessToken, playlistTracksUrl);
                 JSONArray playlistItems = obj.getJSONArray("items");
                 for (int i = 0; i < playlistItems.length(); i++) {
                     Track track = getTrackFromPlaylistJson(playlistItems.getJSONObject(i), false);
@@ -204,7 +203,7 @@ public class Controller {
                 }
             }
             String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + sb_ids;
-            JSONObject obj = Network.JsonGetRequest(accessToken, trackFeaturesUrl);
+            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, trackFeaturesUrl);
             AudioFeature[] audioFeatures = gson.fromJson(
                     String.valueOf(obj.getJSONArray("audio_features")), AudioFeature[].class);
             for (AudioFeature audioFeature : audioFeatures) {
@@ -217,8 +216,10 @@ public class Controller {
         JSONObject newPlaylistInfo = new JSONObject(Map.of("name", newPlaylistName,
                 "description", newPlaylistDescription, "public", false));
         String newPlaylistUrl = "https://api.spotify.com/v1/me/playlists";
-        JSONObject obj = Network.JsonPostRequest(accessToken, newPlaylistUrl, newPlaylistInfo);
-        return obj.getString("id");
+        JSONObject obj = SpotifyService.JsonPostRequest(accessToken, newPlaylistUrl, newPlaylistInfo);
+        Playlist newPlaylist = gson.fromJson(String.valueOf(obj), Playlist.class);
+        playlistDao.createPlaylist(newPlaylist, user.getId());
+        return newPlaylist.getId();
     }
 
     public void addTrackItemsToNewPlaylist(String accessToken, String newPlaylistId) throws IOException {
@@ -236,7 +237,7 @@ public class Controller {
             }
             JSONObject trackListUrisObj = new JSONObject(Map.of("uris", trackListURIsArray));
             String addTracksToPlaylistUrl = "https://api.spotify.com/v1/playlists/" + newPlaylistId + "/tracks";
-            Network.JsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
+            SpotifyService.JsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
         }
         for (String trackId : finalTrackIds) {
             playlistDao.linkTrackToPlaylist(newPlaylistId, trackId);

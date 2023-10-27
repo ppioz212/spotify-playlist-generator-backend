@@ -1,4 +1,4 @@
-package com.asuresh.spotifyplaylistcompiler.app;
+package com.asuresh.spotifyplaylistcompiler.services;
 
 import java.util.List;
 
@@ -13,31 +13,16 @@ public class NewPlaylistDTO {
         return albumsToAdd;
     }
 
-    public void setAlbumsToAdd(List<String> albumsToAdd) {
-        this.albumsToAdd = albumsToAdd;
-    }
-
     public List<String> getPlaylistsToAdd() {
         return playlistsToAdd;
-    }
-
-    public void setPlaylistsToAdd(List<String> playlistsToAdd) {
-        this.playlistsToAdd = playlistsToAdd;
     }
 
     public boolean isAddLikedSongs() {
         return addLikedSongs;
     }
 
-    public void setAddLikedSongs(boolean addLikedSongs) {
-        this.addLikedSongs = addLikedSongs;
-    }
-
     public String getNameOfPlaylist() {
         return nameOfPlaylist;
     }
 
-    public void setNameOfPlaylist(String nameOfPlaylist) {
-        this.nameOfPlaylist = nameOfPlaylist;
-    }
 }
