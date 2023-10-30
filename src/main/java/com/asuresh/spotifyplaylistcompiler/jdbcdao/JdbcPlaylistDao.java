@@ -42,6 +42,16 @@ public class JdbcPlaylistDao {
         return playlists;
     }
 
+    public List<String> getPlaylistIds() {
+        List<String> playlists = new ArrayList<>();
+        String sql = "SELECT * FROM playlist";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        while (results.next()) {
+            playlists.add(results.getString("id"));
+        }
+        return playlists;
+    }
+
     public List<Playlist> getPlaylists(List<String> selectedPlaylistsIds) {
         List<Playlist> playlists = new ArrayList<>();
         MapSqlParameterSource parameters = new MapSqlParameterSource();

@@ -36,6 +36,16 @@ public class JdbcAlbumDao {
         return albums;
     }
 
+    public List<String> getAlbumIds() {
+        List<String> albums = new ArrayList<>();
+        String sql = "SELECT * FROM album;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        while (results.next()) {
+            albums.add(results.getString("id"));
+        }
+        return albums;
+    }
+
     private Album mapRowToAlbum(SqlRowSet results) {
         Album album = new Album();
         album.setUserId(results.getString("id"));
