@@ -14,23 +14,21 @@ public class JdbcUserDao {
     }
 
     public void createUser(User user) {
-        String sql = "INSERT INTO user_profile (id, display_name) " +
-                "VALUES (?, ?) ON CONFLICT (id) DO NOTHING;";
+        String sql = "INSERT INTO user_profile (id, display_name, albums_pulled, playlists_pulled, tracks_pulled) " +
+                "VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) DO NOTHING;";
         jdbcTemplate.update(sql,
                 user.getId(),
-                user.getDisplayName());
-    }
-
-    public boolean checkUserExist(User user) {
-        String sql = "SELECT * FROM user_profile WHERE id = ?;";
-        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, user.getId());
-        return result.next();
+                user.getDisplayName(),
+                user.isAlbumsPulled(),
+                user.isPlaylistsPulled(),
+                user.isTracksPulled());
     }
 
     public void updateDataPulled(TableType tableType, boolean value, String userId) {
         String sql = "UPDATE user_profile " +
                 "SET " + tableType.getValue() + "_pulled = ? " +
                 "WHERE id = ?";
+        System.out.println(sql);
         jdbcTemplate.update(sql, value, userId);
     }
 
@@ -39,5 +37,16 @@ public class JdbcUserDao {
                 "FROM user_profile " +
                 "WHERE id = ?";
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, boolean.class, userId));
+    }
+
+    public void deleteUser(String userId) {
+        String sql = "DELETE FROM user_profile WHERE id = ?;";
+        jdbcTemplate.update(sql, userId);
+    }
+
+    public boolean checkUserExist(User user) {
+        String sql = "SELECT * FROM user_profile WHERE id = ?;";
+        SqlRowSet result = jdbcTemplate.queryForRowSet(sql, user.getId());
+        return result.next();
     }
 }

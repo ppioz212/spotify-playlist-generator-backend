@@ -26,10 +26,10 @@ public class JdbcAlbumDao {
                 user_id);
     }
 
-    public List<Album> getAlbums() {
+    public List<Album> getAlbums(String userId) {
         List<Album> albums = new ArrayList<>();
-        String sql = "SELECT * FROM album;";
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        String sql = "SELECT * FROM album where user_id = ?;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
         while (results.next()) {
             albums.add(mapRowToAlbum(results));
         }
@@ -48,7 +48,8 @@ public class JdbcAlbumDao {
 
     private Album mapRowToAlbum(SqlRowSet results) {
         Album album = new Album();
-        album.setUserId(results.getString("id"));
+        album.setId(results.getString("id"));
+        album.setUserId(results.getString("user_id"));
         album.setName(results.getString("name"));
         album.setArtists(results.getString("artists"));
         return album;
@@ -57,5 +58,13 @@ public class JdbcAlbumDao {
     public void linkTrackToAlbum(String albumId, String trackId) {
         String sql = "INSERT INTO album_track (album_id, track_id) VALUES (?, ?);";
         jdbcTemplate.update(sql, albumId, trackId);
+    }
+
+    public void deleteAlbums(String userId) {
+        String albumUnlinkSql = "DELETE FROM album_track WHERE " +
+                " album_id in (SELECT id FROM album WHERE user_id = ?);";
+        String albumSql = "DELETE FROM album WHERE user_id = ?";
+        jdbcTemplate.update(albumUnlinkSql, userId);
+        jdbcTemplate.update(albumSql, userId);
     }
 }

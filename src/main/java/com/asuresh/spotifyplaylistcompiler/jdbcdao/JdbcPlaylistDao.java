@@ -32,10 +32,10 @@ public class JdbcPlaylistDao {
                 userId);
     }
 
-    public List<Playlist> getPlaylists() {
+    public List<Playlist> getPlaylists(String userId) {
         List<Playlist> playlists = new ArrayList<>();
-        String sql = "SELECT * FROM playlist";
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        String sql = "SELECT * FROM playlist WHERE user_id = ?";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
         while (results.next()) {
             playlists.add(mapRowToPlaylist(results));
         }
@@ -48,22 +48,6 @@ public class JdbcPlaylistDao {
         SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
         while (results.next()) {
             playlists.add(results.getString("id"));
-        }
-        return playlists;
-    }
-
-    public List<Playlist> getPlaylists(List<String> selectedPlaylistsIds) {
-        List<Playlist> playlists = new ArrayList<>();
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        if (selectedPlaylistsIds.isEmpty()) {
-            parameters.addValue("playlistIds", List.of(""));
-        } else {
-            parameters.addValue("playlistIds", selectedPlaylistsIds);
-        }
-        String sql = "SELECT * FROM playlist WHERE id in (:playlistIds);";
-        SqlRowSet results = namedJdbcTemplate.queryForRowSet(sql, parameters);
-        while (results.next()) {
-            playlists.add(mapRowToPlaylist(results));
         }
         return playlists;
     }
@@ -81,5 +65,13 @@ public class JdbcPlaylistDao {
                 results.getString("owner_id"),
                 results.getString("owner_display_name")));
         return playlist;
+    }
+
+    public void deletePlaylists(String userId) {
+        String playlistUnlinkSql = "DELETE FROM playlist_track WHERE " +
+                " playlist_id in (SELECT id FROM playlist WHERE user_id = ?);";
+        String playlistSql = "DELETE FROM playlist WHERE user_id = ?";
+        jdbcTemplate.update(playlistUnlinkSql, userId);
+        jdbcTemplate.update(playlistSql, userId);
     }
 }

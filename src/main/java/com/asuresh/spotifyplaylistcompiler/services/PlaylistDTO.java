@@ -2,7 +2,7 @@ package com.asuresh.spotifyplaylistcompiler.services;
 
 import java.util.List;
 
-public class NewPlaylistDTO {
+public class PlaylistDTO {
     private List<String> playlistsToAdd;
     private List<String> albumsToAdd;
 
