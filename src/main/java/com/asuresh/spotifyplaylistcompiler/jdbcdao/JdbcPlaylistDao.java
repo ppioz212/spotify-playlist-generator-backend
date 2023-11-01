@@ -3,7 +3,6 @@ package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 import com.asuresh.spotifyplaylistcompiler.model.Playlist;
 import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.Owner;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 
@@ -18,7 +17,7 @@ public class JdbcPlaylistDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void createPlaylist(Playlist playlist, String userId) {
+    public void createPlaylist(Playlist playlist) {
         String sql = "INSERT INTO playlist (id, name, owner_id, owner_display_name, user_id) VALUES (?, ?, ?, ?, ?) ON CONFLICT (id) " +
                 "DO NOTHING;";
         jdbcTemplate.update(sql,
@@ -26,7 +25,7 @@ public class JdbcPlaylistDao {
                 playlist.getName(),
                 playlist.getOwner().getId(),
                 playlist.getOwner().getDisplayName(),
-                userId);
+                playlist.getUserId());
     }
 
     public List<Playlist> getPlaylists(String userId) {
@@ -39,10 +38,10 @@ public class JdbcPlaylistDao {
         return playlists;
     }
 
-    public List<String> getPlaylistIds() {
+    public List<String> getPlaylistIds(String userId) {
         List<String> playlists = new ArrayList<>();
-        String sql = "SELECT * FROM playlist";
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        String sql = "SELECT * FROM playlist where user_id = ?;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
         while (results.next()) {
             playlists.add(results.getString("id"));
         }
@@ -61,13 +60,13 @@ public class JdbcPlaylistDao {
         playlist.setOwner(new Owner(
                 results.getString("owner_id"),
                 results.getString("owner_display_name")));
+        playlist.setUserId(results.getString("user_id"));
         return playlist;
     }
 
     public void deletePlaylists(String userId) {
-        String playlistUnlinkSql = "DELETE FROM playlist_track WHERE " +
-                " playlist_id in (SELECT id FROM playlist WHERE user_id = ?);";
-        String playlistSql = "DELETE FROM playlist WHERE user_id = ?";
+        String playlistUnlinkSql = "DELETE FROM playlist_track WHERE user_id = ?;";
+        String playlistSql = "DELETE FROM playlist WHERE user_id = ?;";
         jdbcTemplate.update(playlistUnlinkSql, userId);
         jdbcTemplate.update(playlistSql, userId);
     }

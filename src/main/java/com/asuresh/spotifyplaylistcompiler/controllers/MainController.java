@@ -2,11 +2,9 @@ package com.asuresh.spotifyplaylistcompiler.controllers;
 
 import com.asuresh.spotifyplaylistcompiler.jdbcdao.*;
 import com.asuresh.spotifyplaylistcompiler.services.PlaylistDTO;
-import com.asuresh.spotifyplaylistcompiler.model.Playlist;
 import com.asuresh.spotifyplaylistcompiler.services.SpotifyService;
 import com.asuresh.spotifyplaylistcompiler.model.*;
 import com.google.gson.Gson;
-import org.apache.commons.dbcp2.BasicDataSource;
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +14,6 @@ import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -28,7 +25,6 @@ public class MainController {
     private final JdbcPlaylistDao playlistDao;
     private final JdbcTrackDao trackDao;
     private final JdbcUserDao userDao;
-    private User user;
     private final Gson gson;
 
     MainController(JdbcAlbumDao jdbcAlbumDao, JdbcPlaylistDao jdbcPlaylistDao, JdbcTrackDao jdbcTrackDao, JdbcUserDao jdbcUserDao) {
@@ -42,91 +38,93 @@ public class MainController {
     @PostMapping("/generateNewPlaylist")
     public String generateNewPlaylist(
             @RequestBody PlaylistDTO playlistDTO,
-            @RequestHeader("Authorization") String accessToken) throws IOException {
+            @RequestHeader("Authorization") String accessToken,
+            @RequestHeader("UserId") String userId) throws IOException {
+
         if (playlistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
-        user = SpotifyService.getUser(accessToken);
-        String newPlaylistId = createNewPlaylist(accessToken, playlistDTO.getNameOfPlaylist(), "");
+        String newPlaylistId = createNewPlaylist(accessToken, playlistDTO.getNameOfPlaylist(), "", userId);
         List<String> tracksToAdd = trackDao.getTrackIds(playlistDTO.getAlbumsToAdd(), playlistDTO.getPlaylistsToAdd(),
-                playlistDTO.isAddLikedSongs(), user.getId());
+                playlistDTO.isAddLikedSongs(), userId);
         System.out.println(tracksToAdd.size());
-        addTrackItemsToPlaylist(accessToken, newPlaylistId, tracksToAdd);
+        addTrackItemsToPlaylist(accessToken, newPlaylistId, tracksToAdd, userId);
         return newPlaylistId;
     }
 
     @GetMapping("/getPlaylists")
-    public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
-        user = SpotifyService.getUser(accessToken);
-        if (userDao.wasDataPreviouslyPulled(TableType.PLAYLIST, user.getId())) {
+    public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken,
+                                       @RequestHeader("UserId") String userId) throws IOException {
+        if (userDao.wasDataPreviouslyPulled(TableType.PLAYLIST, userId)) {
             System.out.println("Playlists found");
-            return playlistDao.getPlaylists(user.getId());
+            return playlistDao.getPlaylists(userId);
         }
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (playlistUrl != null) {
-            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, playlistUrl);
+            JSONObject obj = SpotifyService.jsonGetRequest(accessToken, playlistUrl);
             Playlist[] playlists = gson.fromJson(
                     String.valueOf(obj.getJSONArray("items")), Playlist[].class);
             for (Playlist playlist : playlists) {
-                playlistDao.createPlaylist(playlist, user.getId());
+                playlist.setUserId(userId);
+                playlistDao.createPlaylist(playlist);
             }
             playlistUrl = checkIfNextURLAvailable(obj);
         }
-        userDao.updateDataPulled(TableType.PLAYLIST, true, user.getId());
-        return playlistDao.getPlaylists(user.getId());
+        userDao.updateDataPulled(TableType.PLAYLIST, true, userId);
+        return playlistDao.getPlaylists(userId);
     }
 
     @GetMapping("/getAlbums")
-    public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
-        user = SpotifyService.getUser(accessToken);
-        if (userDao.wasDataPreviouslyPulled(TableType.ALBUM, user.getId())) {
+    public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken,
+                                 @RequestHeader("UserId") String userId) throws IOException {
+        if (userDao.wasDataPreviouslyPulled(TableType.ALBUM, userId)) {
             System.out.println("Albums found");
-            return albumDao.getAlbums(user.getId());
+            return albumDao.getAlbums(userId);
         }
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (albumUrl != null) {
-            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, albumUrl);
+            JSONObject obj = SpotifyService.jsonGetRequest(accessToken, albumUrl);
             JSONArray albumItems = obj.getJSONArray("items");
             for (int i = 0; i < albumItems.length(); i++) {
-                Album album = getAlbumFromJson(albumItems.getJSONObject(i).getJSONObject("album"));
-                albumDao.createAlbum(album, user.getId());
+                Album album = getAlbumFromJson(albumItems.getJSONObject(i).getJSONObject("album"), userId);
+                albumDao.createAlbum(album);
             }
             albumUrl = checkIfNextURLAvailable(obj);
         }
-        userDao.updateDataPulled(TableType.ALBUM, true, user.getId());
-        return albumDao.getAlbums(user.getId());
+        userDao.updateDataPulled(TableType.ALBUM, true, userId);
+        return albumDao.getAlbums(userId);
     }
 
     @GetMapping("/compileTracks")
-    public void createAllTracks(@RequestHeader("Authorization") String accessToken) throws IOException {
-        user = SpotifyService.getUser(accessToken);
-        if (userDao.wasDataPreviouslyPulled(TableType.TRACK, user.getId())) {
+    public void createAllTracks(@RequestHeader("Authorization") String accessToken,
+                                @RequestHeader("UserId") String userId) throws IOException {
+        if (userDao.wasDataPreviouslyPulled(TableType.TRACK, userId)) {
             System.out.println("Track data found");
             return;
         }
         System.out.println("Tracks not found");
 
-        List<String> albumIds = albumDao.getAlbumIds();
-        List<String> playlistIds = playlistDao.getPlaylistIds();
+        List<String> albumIds = albumDao.getAlbumIds(userId);
+        List<String> playlistIds = playlistDao.getPlaylistIds(userId);
 
         System.out.println("Compiling Album tracks");
-        compileAlbumTrackIds(albumIds, accessToken);
+        compileAlbumTrackIds(albumIds, accessToken, userId);
         System.out.println("Album tracks compiled");
 
         System.out.println("Compiling Playlist tracks");
-        compilePlaylistTrackIds(playlistIds, accessToken);
+        compilePlaylistTrackIds(playlistIds, accessToken, userId);
         System.out.println("Playlist tracks compiled");
 
         System.out.println("Compiling Saved tracks");
-        compileUserSavedSongIds(accessToken);
+        compileUserSavedSongIds(accessToken, userId);
         System.out.println("Saved tracks compiled");
 
         System.out.println("Compiling audio features");
-        compileTrackFeatures(accessToken);
+        compileTrackFeatures(accessToken, userId);
         System.out.println("Audio features compiled");
 
-        userDao.updateDataPulled(TableType.TRACK, true, user.getId());
-        userDao.updateLastUpdatedTimestamp(user.getId());
+        userDao.updateDataPulled(TableType.TRACK, true, userId);
+        userDao.updateLastUpdatedTimestamp(userId);
     }
 
     @GetMapping("/deleteUser")
@@ -152,51 +150,51 @@ public class MainController {
         return user;
     }
 
-    public void compilePlaylistTrackIds(List<String> playlistIds, String accessToken) throws IOException {
+    public void compilePlaylistTrackIds(List<String> playlistIds, String accessToken, String userId) throws IOException {
         for (String playlistID : playlistIds) {
             String playlistTracksUrl = "https://api.spotify.com/v1/playlists/" + playlistID + "/tracks?limit=50";
             while (playlistTracksUrl != null) {
-                JSONObject obj = SpotifyService.JsonGetRequest(accessToken, playlistTracksUrl);
+                JSONObject obj = SpotifyService.jsonGetRequest(accessToken, playlistTracksUrl);
                 JSONArray playlistItems = obj.getJSONArray("items");
                 for (int i = 0; i < playlistItems.length(); i++) {
-                    Track track = getTrackFromPlaylistJson(playlistItems.getJSONObject(i), false);
+                    Track track = getTrackFromPlaylistJson(playlistItems.getJSONObject(i), false, userId);
                     if (track == null) {
                         continue;
                     }
                     trackDao.createTrack(track);
-                    playlistDao.linkTrackToPlaylist(playlistID, track.getId(), user.getId());
+                    playlistDao.linkTrackToPlaylist(playlistID, track.getId(), userId);
                 }
                 playlistTracksUrl = checkIfNextURLAvailable(obj);
             }
         }
     }
 
-    public void compileAlbumTrackIds(List<String> albumIds, String accessToken) throws IOException {
+    public void compileAlbumTrackIds(List<String> albumIds, String accessToken, String userId) throws IOException {
         for (String albumID : albumIds) {
             String albumTracksUrl = "https://api.spotify.com/v1/albums/" + albumID + "/tracks?limit=50";
             while (albumTracksUrl != null) {
-                JSONObject obj = SpotifyService.JsonGetRequest(accessToken, albumTracksUrl);
+                JSONObject obj = SpotifyService.jsonGetRequest(accessToken, albumTracksUrl);
                 JSONArray albumItems = obj.getJSONArray("items");
                 for (int i = 0; i < albumItems.length(); i++) {
-                    Track track = getTrackFromAlbumJson(albumItems.getJSONObject(i), false);
+                    Track track = getTrackFromAlbumJson(albumItems.getJSONObject(i), false, userId);
                     if (track == null) {
                         continue;
                     }
                     trackDao.createTrack(track);
-                    albumDao.linkTrackToAlbum(albumID, track.getId(), user.getId());
+                    albumDao.linkTrackToAlbum(albumID, track.getId(), userId);
                 }
                 albumTracksUrl = checkIfNextURLAvailable(obj);
             }
         }
     }
 
-    public void compileUserSavedSongIds(String accessToken) throws IOException {
+    public void compileUserSavedSongIds(String accessToken, String userId) throws IOException {
         String savedSongsUrl = "https://api.spotify.com/v1/me/tracks?limit=50";
         while (savedSongsUrl != null) {
-            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, savedSongsUrl);
+            JSONObject obj = SpotifyService.jsonGetRequest(accessToken, savedSongsUrl);
             JSONArray savedSongsItems = obj.getJSONArray("items");
             for (int i = 0; i < savedSongsItems.length(); i++) {
-                Track track = getTrackFromPlaylistJson(savedSongsItems.getJSONObject(i), true);
+                Track track = getTrackFromPlaylistJson(savedSongsItems.getJSONObject(i), true, userId);
                 if (track == null) {
                     continue;
                 }
@@ -207,12 +205,12 @@ public class MainController {
     }
 
 
-    public void compileTrackFeatures(String accessToken) throws IOException {
-        List<String> allTrackIds = trackDao.getTrackIds(user.getId());
+    public void compileTrackFeatures(String accessToken, String userId) throws IOException {
+        List<String> allTrackIds = trackDao.getTrackIds(userId);
         String[] queryStringParams = compileAudioFeatureQSParams(allTrackIds);
-        for (String queryString : queryStringParams) {
-            String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + queryString;
-            JSONObject obj = SpotifyService.JsonGetRequest(accessToken, trackFeaturesUrl);
+        for (String queryStringParam : queryStringParams) {
+            String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + queryStringParam;
+            JSONObject obj = SpotifyService.jsonGetRequest(accessToken, trackFeaturesUrl);
             AudioFeature[] audioFeatures = gson.fromJson(
                     String.valueOf(obj.getJSONArray("audio_features")), AudioFeature[].class);
             for (AudioFeature audioFeature : audioFeatures) {
@@ -225,17 +223,18 @@ public class MainController {
         }
     }
 
-    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription) throws IOException {
+    public String createNewPlaylist(String accessToken, String newPlaylistName, String newPlaylistDescription, String userId) throws IOException {
         JSONObject newPlaylistInfo = new JSONObject(Map.of("name", newPlaylistName,
                 "description", newPlaylistDescription, "public", false));
         String newPlaylistUrl = "https://api.spotify.com/v1/me/playlists";
-        JSONObject obj = SpotifyService.JsonPostRequest(accessToken, newPlaylistUrl, newPlaylistInfo);
+        JSONObject obj = SpotifyService.jsonPostRequest(accessToken, newPlaylistUrl, newPlaylistInfo);
         Playlist newPlaylist = gson.fromJson(String.valueOf(obj), Playlist.class);
-        playlistDao.createPlaylist(newPlaylist, user.getId());
+        newPlaylist.setUserId(userId);
+        playlistDao.createPlaylist(newPlaylist);
         return newPlaylist.getId();
     }
 
-    public void addTrackItemsToPlaylist(String accessToken, String playlistId, List<String> tracksToAdd) throws IOException {
+    public void addTrackItemsToPlaylist(String accessToken, String playlistId, List<String> tracksToAdd, String userId) throws IOException {
         int numberOfTimesToAddTracks = tracksToAdd.size() / 99 + 1;
         int j = 0;
         for (int i = 0; i < numberOfTimesToAddTracks; i++) {
@@ -249,10 +248,10 @@ public class MainController {
             }
             JSONObject trackListUrisObj = new JSONObject(Map.of("uris", trackListURIsArray));
             String addTracksToPlaylistUrl = "https://api.spotify.com/v1/playlists/" + playlistId + "/tracks";
-            SpotifyService.JsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
+            SpotifyService.jsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
         }
         for (String trackId : tracksToAdd) {
-            playlistDao.linkTrackToPlaylist(playlistId, trackId, user.getId());
+            playlistDao.linkTrackToPlaylist(playlistId, trackId, userId);
         }
     }
 
@@ -278,7 +277,7 @@ public class MainController {
         return qsParams;
     }
 
-    public Album getAlbumFromJson(JSONObject albumData) {
+    public Album getAlbumFromJson(JSONObject albumData, String userId) {
         StringBuilder sb = new StringBuilder();
         JSONArray artistsJSONArray = (albumData.getJSONArray("artists"));
         for (int j = 0; j < artistsJSONArray.length(); j++) {
@@ -291,12 +290,12 @@ public class MainController {
         Album album = new Album();
         album.setId(albumData.getString("id"));
         album.setName(albumData.getString("name"));
-        album.setUserId(user.getId());
+        album.setUserId(userId);
         album.setArtists(sb.toString());
         return album;
     }
 
-    public Track getTrackFromPlaylistJson(JSONObject playlistItem, boolean isLikedSong) {
+    public Track getTrackFromPlaylistJson(JSONObject playlistItem, boolean isLikedSong, String userId) {
         if (playlistItem.isNull("track") ||
                 playlistItem.getJSONObject("track").isNull("id") ||
                 (playlistItem.keySet().contains("episode"))) {
@@ -306,12 +305,12 @@ public class MainController {
         Track track = new Track();
         track.setId(playlistItem.getJSONObject("track").getString("id"));
         track.setName(playlistItem.getJSONObject("track").getString("name"));
-        track.setUserId(user.getId());
+        track.setUserId(userId);
         track.setLikedSong(isLikedSong);
         return track;
     }
 
-    public Track getTrackFromAlbumJson(JSONObject trackItem, boolean isLikedSong) {
+    public Track getTrackFromAlbumJson(JSONObject trackItem, boolean isLikedSong, String userId) {
         if (trackItem == null || trackItem.isNull("id")) {
             System.out.println("Null Track or Id found in album track parsing");
             return null;
@@ -319,7 +318,7 @@ public class MainController {
         Track track = new Track();
         track.setId(trackItem.getString("id"));
         track.setName(trackItem.getString("name"));
-        track.setUserId(user.getId());
+        track.setUserId(userId);
         track.setLikedSong(isLikedSong);
         return track;
     }

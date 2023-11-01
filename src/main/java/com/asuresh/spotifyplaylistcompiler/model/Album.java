@@ -10,12 +10,6 @@ public class Album {
 
     public Album() {}
 
-    public Album(String id, String name, String artists) {
-        this.id = id;
-        this.name = name;
-        this.artists = artists;
-    }
-
     public String getUserId() {
         return userId;
     }

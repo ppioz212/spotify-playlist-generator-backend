@@ -21,6 +21,15 @@ public class Playlist {
     private Tracks tracks;
     private String type;
     private String uri;
+    private String userId;
+
+    public String getUserId() {
+        return userId;
+    }
+
+    public void setUserId(String userId) {
+        this.userId = userId;
+    }
 
     public void setId(String id) {
         this.id = id;

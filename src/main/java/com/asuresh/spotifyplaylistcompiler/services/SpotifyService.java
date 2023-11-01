@@ -19,7 +19,7 @@ public abstract class SpotifyService {
     private static final Gson gson = new Gson();
     private final RestTemplate restTemplate = new RestTemplate();
 
-    public static JSONObject JsonGetRequest(String accessToken, String URL) throws IOException {
+    public static JSONObject jsonGetRequest(String accessToken, String URL) throws IOException {
         Request request = new Request.Builder()
                 .url(URL)
                 .header("Authorization", "Bearer " + accessToken)
@@ -33,11 +33,11 @@ public abstract class SpotifyService {
     }
 
     public static User getUser(String accessToken) throws IOException {
-        JSONObject userObj = JsonGetRequest(accessToken, "https://api.spotify.com/v1/me");
+        JSONObject userObj = jsonGetRequest(accessToken, "https://api.spotify.com/v1/me");
         return gson.fromJson(String.valueOf(userObj),User.class);
     }
 
-    public static JSONObject JsonPostRequest(String accessToken, String URL, JSONObject data) throws IOException {
+    public static JSONObject jsonPostRequest(String accessToken, String URL, JSONObject data) throws IOException {
         RequestBody body = RequestBody.create(String.valueOf(data), JSON);
         Request request = new Request.Builder()
                 .url(URL)

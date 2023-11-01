@@ -1,12 +1,10 @@
 package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 
-import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.model.Album;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,14 +16,14 @@ public class JdbcAlbumDao {
         this.jdbcTemplate = jdbcTemplate;
     }
 
-    public void createAlbum(Album album, String user_id) {
+    public void createAlbum(Album album) {
         String sql = "INSERT INTO album (id, name, artists, user_id) VALUES (?, ?, ?, ?) ON CONFLICT (id) " +
                 "DO NOTHING";
         jdbcTemplate.update(sql,
                 album.getId(),
                 album.getName(),
                 album.getArtists(),
-                user_id);
+                album.getUserId());
     }
 
     public List<Album> getAlbums(String userId) {
@@ -38,10 +36,10 @@ public class JdbcAlbumDao {
         return albums;
     }
 
-    public List<String> getAlbumIds() {
+    public List<String> getAlbumIds(String userId) {
         List<String> albums = new ArrayList<>();
-        String sql = "SELECT * FROM album;";
-        SqlRowSet results = jdbcTemplate.queryForRowSet(sql);
+        String sql = "SELECT * FROM album where user_id = ?;";
+        SqlRowSet results = jdbcTemplate.queryForRowSet(sql, userId);
         while (results.next()) {
             albums.add(results.getString("id"));
         }
@@ -63,8 +61,7 @@ public class JdbcAlbumDao {
     }
 
     public void deleteAlbums(String userId) {
-        String albumUnlinkSql = "DELETE FROM album_track WHERE " +
-                " album_id in (SELECT id FROM album WHERE user_id = ?);";
+        String albumUnlinkSql = "DELETE FROM album_track WHERE user_id = ?;";
         String albumSql = "DELETE FROM album WHERE user_id = ?";
         jdbcTemplate.update(albumUnlinkSql, userId);
         jdbcTemplate.update(albumSql, userId);
