@@ -33,7 +33,7 @@ public class MainController {
 
     MainController(JdbcAlbumDao jdbcAlbumDao, JdbcPlaylistDao jdbcPlaylistDao, JdbcTrackDao jdbcTrackDao, JdbcUserDao jdbcUserDao) {
         this.albumDao = jdbcAlbumDao;
-        this.playlistDao =  jdbcPlaylistDao;
+        this.playlistDao = jdbcPlaylistDao;
         this.trackDao = jdbcTrackDao;
         this.userDao = jdbcUserDao;
         gson = new Gson();
@@ -44,10 +44,10 @@ public class MainController {
             @RequestBody PlaylistDTO playlistDTO,
             @RequestHeader("Authorization") String accessToken) throws IOException {
 
-        user = SpotifyService.getUser(accessToken);
         if (playlistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
+        user = SpotifyService.getUser(accessToken);
         String newPlaylistId = createNewPlaylist(accessToken, playlistDTO.getNameOfPlaylist(), "");
         List<String> tracksToAdd = trackDao.getTrackIds(playlistDTO.getAlbumsToAdd(), playlistDTO.getPlaylistsToAdd(),
                 playlistDTO.isAddLikedSongs(), user.getId());
@@ -60,6 +60,7 @@ public class MainController {
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = SpotifyService.getUser(accessToken);
         if (userDao.wasDataPreviouslyPulled(TableType.PLAYLIST, user.getId())) {
+            System.out.println("Playlist data found");
             return playlistDao.getPlaylists(user.getId());
         }
         List<Playlist> allPlaylists = new ArrayList<>();
@@ -82,6 +83,7 @@ public class MainController {
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = SpotifyService.getUser(accessToken);
         if (userDao.wasDataPreviouslyPulled(TableType.ALBUM, user.getId())) {
+            System.out.println("Album data found");
             return albumDao.getAlbums(user.getId());
         }
         List<Album> allAlbums = new ArrayList<>();
@@ -125,7 +127,12 @@ public class MainController {
             compileTrackFeatures(accessToken);
             System.out.println("Audio features compiled");
 
-            userDao.updateDataPulled(TableType.TRACK, true, user.getId());
+            int numRowsAffected = userDao.updateDataPulled(TableType.TRACK, true, user.getId());
+            if (numRowsAffected == 0) {
+                System.out.println("tracks_data pulled not updated");
+            } else {
+                System.out.println("tracks_pulled updated to true");
+            }
         } else {
             System.out.println("Track data found");
         }
@@ -210,23 +217,10 @@ public class MainController {
 
 
     public void compileTrackFeatures(String accessToken) throws IOException {
-        List<String> allTracks = trackDao.getTrackIds(user.getId());
-        int numberOfTimesToGetFeatures = allTracks.size() / 100 + 1;
-        int j = 0;
-        for (int i = 0; i < numberOfTimesToGetFeatures; i++) {
-            StringBuilder sb_ids = new StringBuilder();
-            for (; j < allTracks.size(); j++) {
-                if (j % 100 == 0) {
-                    sb_ids.append(allTracks.get(j));
-                } else {
-                    sb_ids.append("%2C").append(allTracks.get(j));
-                }
-                if (j % 100 == 99 && j != 0) {
-                    j++;
-                    break;
-                }
-            }
-            String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + sb_ids;
+        List<String> allTrackIds = trackDao.getTrackIds(user.getId());
+        String[] queryStringParams = compileAudioFeatureQSParams(allTrackIds);
+        for (String queryString : queryStringParams) {
+            String trackFeaturesUrl = "https://api.spotify.com/v1/audio-features?ids=" + queryString;
             JSONObject obj = SpotifyService.JsonGetRequest(accessToken, trackFeaturesUrl);
             AudioFeature[] audioFeatures = gson.fromJson(
                     String.valueOf(obj.getJSONArray("audio_features")), AudioFeature[].class);
@@ -269,6 +263,28 @@ public class MainController {
         for (String trackId : tracksToAdd) {
             playlistDao.linkTrackToPlaylist(playlistId, trackId);
         }
+    }
+
+    private String[] compileAudioFeatureQSParams(List<String> allTrackIds) {
+        int numberOfTimesToHitFeaturesEndpoint = allTrackIds.size() / 100 + 1;
+        String[] qsParams = new String[numberOfTimesToHitFeaturesEndpoint];
+        int j = 0;
+        for (int i = 0; i < numberOfTimesToHitFeaturesEndpoint; i++) {
+            StringBuilder sb_ids = new StringBuilder();
+            for (; j < allTrackIds.size(); j++) {
+                if (j % 100 == 0) {
+                    sb_ids.append(allTrackIds.get(j));
+                } else {
+                    sb_ids.append("%2C").append(allTrackIds.get(j));
+                }
+                if (j % 100 == 99 && j != 0) {
+                    j++;
+                    break;
+                }
+            }
+            qsParams[i] = sb_ids.toString();
+        }
+        return qsParams;
     }
 
     public Album getAlbumFromJson(JSONObject albumData) {

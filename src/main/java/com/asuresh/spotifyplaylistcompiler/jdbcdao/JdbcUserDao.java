@@ -26,11 +26,11 @@ public class JdbcUserDao {
                 user.isTracksPulled());
     }
 
-    public void updateDataPulled(TableType tableType, boolean value, String userId) {
+    public int updateDataPulled(TableType tableType, boolean value, String userId) {
         String sql = "UPDATE user_profile " +
                 "SET " + tableType.getValue() + "_pulled = ? " +
                 "WHERE id = ?";
-        jdbcTemplate.update(sql, value, userId);
+        return jdbcTemplate.update(sql, value, userId);
     }
 
     public boolean wasDataPreviouslyPulled(TableType tableType, String userId) {
