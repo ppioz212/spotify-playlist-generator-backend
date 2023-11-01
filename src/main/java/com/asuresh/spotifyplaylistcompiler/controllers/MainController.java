@@ -43,7 +43,6 @@ public class MainController {
     public String generateNewPlaylist(
             @RequestBody PlaylistDTO playlistDTO,
             @RequestHeader("Authorization") String accessToken) throws IOException {
-
         if (playlistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
@@ -60,83 +59,74 @@ public class MainController {
     public List<Playlist> getPlaylists(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = SpotifyService.getUser(accessToken);
         if (userDao.wasDataPreviouslyPulled(TableType.PLAYLIST, user.getId())) {
-            System.out.println("Playlist data found");
+            System.out.println("Playlists found");
             return playlistDao.getPlaylists(user.getId());
         }
-        List<Playlist> allPlaylists = new ArrayList<>();
         String playlistUrl = "https://api.spotify.com/v1/me/playlists?limit=50";
         while (playlistUrl != null) {
             JSONObject obj = SpotifyService.JsonGetRequest(accessToken, playlistUrl);
             Playlist[] playlists = gson.fromJson(
                     String.valueOf(obj.getJSONArray("items")), Playlist[].class);
             for (Playlist playlist : playlists) {
-                allPlaylists.add(playlist);
                 playlistDao.createPlaylist(playlist, user.getId());
             }
             playlistUrl = checkIfNextURLAvailable(obj);
         }
         userDao.updateDataPulled(TableType.PLAYLIST, true, user.getId());
-        return allPlaylists;
+        return playlistDao.getPlaylists(user.getId());
     }
 
     @GetMapping("/getAlbums")
     public List<Album> getAlbums(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = SpotifyService.getUser(accessToken);
         if (userDao.wasDataPreviouslyPulled(TableType.ALBUM, user.getId())) {
-            System.out.println("Album data found");
+            System.out.println("Albums found");
             return albumDao.getAlbums(user.getId());
         }
-        List<Album> allAlbums = new ArrayList<>();
         String albumUrl = "https://api.spotify.com/v1/me/albums?limit=50";
         while (albumUrl != null) {
             JSONObject obj = SpotifyService.JsonGetRequest(accessToken, albumUrl);
             JSONArray albumItems = obj.getJSONArray("items");
             for (int i = 0; i < albumItems.length(); i++) {
                 Album album = getAlbumFromJson(albumItems.getJSONObject(i).getJSONObject("album"));
-                allAlbums.add(album);
                 albumDao.createAlbum(album, user.getId());
             }
             albumUrl = checkIfNextURLAvailable(obj);
         }
         userDao.updateDataPulled(TableType.ALBUM, true, user.getId());
-        return allAlbums;
+        return albumDao.getAlbums(user.getId());
     }
 
     @GetMapping("/compileTracks")
     public void createAllTracks(@RequestHeader("Authorization") String accessToken) throws IOException {
         user = SpotifyService.getUser(accessToken);
-        if (!(userDao.wasDataPreviouslyPulled(TableType.TRACK, user.getId()))) {
-            System.out.println("Tracks not found");
-
-            List<String> albumIds = albumDao.getAlbumIds();
-            List<String> playlistIds = playlistDao.getPlaylistIds();
-
-            System.out.println("Compiling Album tracks");
-            compileAlbumTrackIds(albumIds, accessToken);
-            System.out.println("Album tracks compiled");
-
-            System.out.println("Compiling Playlist tracks");
-            compilePlaylistTrackIds(playlistIds, accessToken);
-            System.out.println("Playlist tracks compiled");
-
-            System.out.println("Compiling Saved tracks");
-            compileUserSavedSongIds(accessToken);
-            System.out.println("Saved tracks compiled");
-
-            System.out.println("Compiling audio features");
-            compileTrackFeatures(accessToken);
-            System.out.println("Audio features compiled");
-
-            int numRowsAffected = userDao.updateDataPulled(TableType.TRACK, true, user.getId());
-            userDao.updateLastUpdatedTimestamp(user.getId());
-            if (numRowsAffected == 0) {
-                System.out.println("tracks_data pulled not updated");
-            } else {
-                System.out.println("tracks_pulled updated to true");
-            }
-        } else {
+        if (userDao.wasDataPreviouslyPulled(TableType.TRACK, user.getId())) {
             System.out.println("Track data found");
+            return;
         }
+        System.out.println("Tracks not found");
+
+        List<String> albumIds = albumDao.getAlbumIds();
+        List<String> playlistIds = playlistDao.getPlaylistIds();
+
+        System.out.println("Compiling Album tracks");
+        compileAlbumTrackIds(albumIds, accessToken);
+        System.out.println("Album tracks compiled");
+
+        System.out.println("Compiling Playlist tracks");
+        compilePlaylistTrackIds(playlistIds, accessToken);
+        System.out.println("Playlist tracks compiled");
+
+        System.out.println("Compiling Saved tracks");
+        compileUserSavedSongIds(accessToken);
+        System.out.println("Saved tracks compiled");
+
+        System.out.println("Compiling audio features");
+        compileTrackFeatures(accessToken);
+        System.out.println("Audio features compiled");
+
+        userDao.updateDataPulled(TableType.TRACK, true, user.getId());
+        userDao.updateLastUpdatedTimestamp(user.getId());
     }
 
     @GetMapping("/deleteUser")

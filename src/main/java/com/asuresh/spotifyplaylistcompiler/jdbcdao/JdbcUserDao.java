@@ -5,8 +5,6 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-
 @Component
 public class JdbcUserDao {
     private final JdbcTemplate jdbcTemplate;
@@ -26,11 +24,11 @@ public class JdbcUserDao {
                 user.isTracksPulled());
     }
 
-    public int updateDataPulled(TableType tableType, boolean value, String userId) {
+    public void updateDataPulled(TableType tableType, boolean value, String userId) {
         String sql = "UPDATE user_profile " +
                 "SET " + tableType.getValue() + "_pulled = ? " +
                 "WHERE id = ?";
-        return jdbcTemplate.update(sql, value, userId);
+        jdbcTemplate.update(sql, value, userId);
     }
 
     public boolean wasDataPreviouslyPulled(TableType tableType, String userId) {
