@@ -4,16 +4,18 @@ import com.asuresh.spotifyplaylistcompiler.dao.AlbumDao;
 import com.asuresh.spotifyplaylistcompiler.model.Album;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class JdbcAlbumDao {
     private final JdbcTemplate jdbcTemplate;
 
-    public JdbcAlbumDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
+    public JdbcAlbumDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void createAlbum(Album album, String user_id) {

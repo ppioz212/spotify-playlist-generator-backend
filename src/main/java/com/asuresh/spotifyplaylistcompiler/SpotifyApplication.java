@@ -8,10 +8,6 @@ import org.springframework.boot.autoconfigure.jdbc.DataSourceAutoConfiguration;
 import java.io.IOException;
 
 @SpringBootApplication
-@EnableAutoConfiguration(exclude = {
-        DataSourceAutoConfiguration.class,
-}
-)
 public class SpotifyApplication {
 
     public static void main(String[] args) throws IOException {

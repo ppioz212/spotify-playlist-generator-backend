@@ -31,15 +31,11 @@ public class MainController {
     private User user;
     private final Gson gson;
 
-    MainController() {
-        BasicDataSource dataSource = new BasicDataSource();
-        dataSource.setUsername("postgres");
-        dataSource.setUrl("jdbc:postgresql://localhost:5432/spotifyData");
-        dataSource.setPassword("postgres1");
-        albumDao = new JdbcAlbumDao(dataSource);
-        playlistDao = new JdbcPlaylistDao(dataSource);
-        trackDao = new JdbcTrackDao(dataSource);
-        userDao = new JdbcUserDao(dataSource);
+    MainController(JdbcAlbumDao jdbcAlbumDao, JdbcPlaylistDao jdbcPlaylistDao, JdbcTrackDao jdbcTrackDao, JdbcUserDao jdbcUserDao) {
+        this.albumDao = jdbcAlbumDao;
+        this.playlistDao =  jdbcPlaylistDao;
+        this.trackDao = jdbcTrackDao;
+        this.userDao = jdbcUserDao;
         gson = new Gson();
     }
 

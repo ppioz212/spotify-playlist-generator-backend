@@ -3,22 +3,19 @@ package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 import com.asuresh.spotifyplaylistcompiler.model.Playlist;
 import com.asuresh.spotifyplaylistcompiler.model.playlistmodel.Owner;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.util.ArrayList;
 import java.util.List;
 
+@Component
 public class JdbcPlaylistDao {
     private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedJdbcTemplate;
 
-    public JdbcPlaylistDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
-        namedJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
-
+    public JdbcPlaylistDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void createPlaylist(Playlist playlist, String userId) {

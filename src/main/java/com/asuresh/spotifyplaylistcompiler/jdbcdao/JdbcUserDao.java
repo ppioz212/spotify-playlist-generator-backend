@@ -3,14 +3,16 @@ package com.asuresh.spotifyplaylistcompiler.jdbcdao;
 import com.asuresh.spotifyplaylistcompiler.model.User;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.support.rowset.SqlRowSet;
+import org.springframework.stereotype.Component;
 
 import javax.sql.DataSource;
 
+@Component
 public class JdbcUserDao {
     private final JdbcTemplate jdbcTemplate;
 
-    public JdbcUserDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
+    public JdbcUserDao(JdbcTemplate jdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
     }
 
     public void createUser(User user) {
@@ -28,7 +30,6 @@ public class JdbcUserDao {
         String sql = "UPDATE user_profile " +
                 "SET " + tableType.getValue() + "_pulled = ? " +
                 "WHERE id = ?";
-        System.out.println(sql);
         jdbcTemplate.update(sql, value, userId);
     }
 

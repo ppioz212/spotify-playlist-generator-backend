@@ -7,17 +7,18 @@ import org.jetbrains.annotations.NotNull;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
+import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
 import java.util.List;
 
+@Component
 public class JdbcTrackDao {
     private final JdbcTemplate jdbcTemplate;
-    private final NamedParameterJdbcTemplate namedJdbcTemplate;
+    private final NamedParameterJdbcTemplate namedParameterJdbcTemplate;
 
-    public JdbcTrackDao(DataSource dataSource) {
-        jdbcTemplate = new JdbcTemplate(dataSource);
-        namedJdbcTemplate = new NamedParameterJdbcTemplate(dataSource);
+    public JdbcTrackDao(JdbcTemplate jdbcTemplate, NamedParameterJdbcTemplate namedParameterJdbcTemplate) {
+        this.jdbcTemplate = jdbcTemplate;
+        this.namedParameterJdbcTemplate = namedParameterJdbcTemplate;
     }
 
     public void createTrack(Track track) {
@@ -57,7 +58,7 @@ public class JdbcTrackDao {
 //        parameters.addValue("minTempo", startTempoRange);
 //        parameters.addValue("maxTempo", endTempoRange);
         String sql = getTrackIdsSql(addLikedSongs);
-        return namedJdbcTemplate.queryForList(sql, parameters, String.class);
+        return namedParameterJdbcTemplate.queryForList(sql, parameters, String.class);
     }
 
     @NotNull
