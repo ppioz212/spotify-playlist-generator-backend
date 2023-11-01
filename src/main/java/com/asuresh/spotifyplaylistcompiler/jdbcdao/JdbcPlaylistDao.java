@@ -49,9 +49,9 @@ public class JdbcPlaylistDao {
         return playlists;
     }
 
-    public void linkTrackToPlaylist(String playlistId, String trackId) {
-        String sql = "INSERT INTO playlist_track (playlist_id, track_id) VALUES (?, ?);";
-        jdbcTemplate.update(sql, playlistId, trackId);
+    public void linkTrackToPlaylist(String playlistId, String trackId, String userId) {
+        String sql = "INSERT INTO playlist_track (playlist_id, track_id, user_id) VALUES (?, ?, ?);";
+        jdbcTemplate.update(sql, playlistId, trackId, userId);
     }
 
     private Playlist mapRowToPlaylist(SqlRowSet results) {

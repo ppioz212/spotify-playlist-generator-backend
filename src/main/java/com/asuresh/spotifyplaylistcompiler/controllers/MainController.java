@@ -128,6 +128,7 @@ public class MainController {
             System.out.println("Audio features compiled");
 
             int numRowsAffected = userDao.updateDataPulled(TableType.TRACK, true, user.getId());
+            userDao.updateLastUpdatedTimestamp(user.getId());
             if (numRowsAffected == 0) {
                 System.out.println("tracks_data pulled not updated");
             } else {
@@ -173,7 +174,7 @@ public class MainController {
                         continue;
                     }
                     trackDao.createTrack(track);
-                    playlistDao.linkTrackToPlaylist(playlistID, track.getId());
+                    playlistDao.linkTrackToPlaylist(playlistID, track.getId(), user.getId());
                 }
                 playlistTracksUrl = checkIfNextURLAvailable(obj);
             }
@@ -192,7 +193,7 @@ public class MainController {
                         continue;
                     }
                     trackDao.createTrack(track);
-                    albumDao.linkTrackToAlbum(albumID, track.getId());
+                    albumDao.linkTrackToAlbum(albumID, track.getId(), user.getId());
                 }
                 albumTracksUrl = checkIfNextURLAvailable(obj);
             }
@@ -261,7 +262,7 @@ public class MainController {
             SpotifyService.JsonPostRequest(accessToken, addTracksToPlaylistUrl, trackListUrisObj);
         }
         for (String trackId : tracksToAdd) {
-            playlistDao.linkTrackToPlaylist(playlistId, trackId);
+            playlistDao.linkTrackToPlaylist(playlistId, trackId, user.getId());
         }
     }
 

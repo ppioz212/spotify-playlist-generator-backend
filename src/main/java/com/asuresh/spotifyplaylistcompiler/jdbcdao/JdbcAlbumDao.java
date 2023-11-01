@@ -57,9 +57,9 @@ public class JdbcAlbumDao {
         return album;
     }
 
-    public void linkTrackToAlbum(String albumId, String trackId) {
-        String sql = "INSERT INTO album_track (album_id, track_id) VALUES (?, ?);";
-        jdbcTemplate.update(sql, albumId, trackId);
+    public void linkTrackToAlbum(String albumId, String trackId, String userId) {
+        String sql = "INSERT INTO album_track (album_id, track_id, user_id) VALUES (?, ?, ?);";
+        jdbcTemplate.update(sql, albumId, trackId, userId);
     }
 
     public void deleteAlbums(String userId) {

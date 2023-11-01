@@ -40,6 +40,12 @@ public class JdbcUserDao {
         return Boolean.TRUE.equals(jdbcTemplate.queryForObject(sql, boolean.class, userId));
     }
 
+    public void updateLastUpdatedTimestamp(String userId) {
+        String sql = "update user_profile set last_updated = current_timestamp " +
+                "where id = ?;";
+        jdbcTemplate.update(sql, userId);
+    }
+
     public void deleteUser(String userId) {
         String sql = "DELETE FROM user_profile WHERE id = ?;";
         jdbcTemplate.update(sql, userId);
