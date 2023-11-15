@@ -8,6 +8,8 @@ public class PlaylistDTO {
 
     private String nameOfPlaylist;
     private boolean addLikedSongs;
+    private double maxTempo;
+    private double minTempo;
 
     public List<String> getAlbumsToAdd() {
         return albumsToAdd;
@@ -25,4 +27,11 @@ public class PlaylistDTO {
         return nameOfPlaylist;
     }
 
+    public double getMaxTempo() {
+        return maxTempo;
+    }
+
+    public double getMinTempo() {
+        return minTempo;
+    }
 }

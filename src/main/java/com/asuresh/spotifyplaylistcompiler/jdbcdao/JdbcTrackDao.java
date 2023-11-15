@@ -51,13 +51,13 @@ public class JdbcTrackDao {
     }
 
     public List<String> getTrackIds(List<String> albumsToAdd, List<String> playlistsToAdd,
-                                    boolean addLikedSongs, String userId) {
+                                    boolean addLikedSongs, double startTempoRange, double endTempoRange, String userId) {
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("playlistIds", playlistsToAdd.isEmpty() ? List.of("") : playlistsToAdd);
         parameters.addValue("albumIds", albumsToAdd.isEmpty() ? List.of("") : albumsToAdd);
         parameters.addValue("userId", userId);
-//        parameters.addValue("minTempo", startTempoRange);
-//        parameters.addValue("maxTempo", endTempoRange);
+        parameters.addValue("minTempo", startTempoRange);
+        parameters.addValue("maxTempo", endTempoRange);
         String sql = getTrackIdsSql(addLikedSongs);
         return namedParameterJdbcTemplate.queryForList(sql, parameters, String.class);
     }
@@ -75,7 +75,8 @@ public class JdbcTrackDao {
                 "WHERE album_id IN (:albumIds) " +
                 likedSongSqlAddon +
                 ") JOIN track ON track.id = track_id " +
-                "WHERE user_id = :userId;";
+                "WHERE user_id = :userId " +
+                "and tempo between :minTempo and :maxTempo;";
     }
 
     public Double getMaxTempoOfTracks(String userId) {
@@ -86,7 +87,6 @@ public class JdbcTrackDao {
     public Double getMinTempoOfTracks(String userId) {
         String sql = "SELECT MIN(tempo) FROM track where user_id = ? and tempo != 0;";
         return jdbcTemplate.queryForObject(sql, double.class, userId);
-
     }
 
     public void deleteTracksByUserId(String userId) {

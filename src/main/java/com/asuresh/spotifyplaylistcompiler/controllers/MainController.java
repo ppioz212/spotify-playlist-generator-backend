@@ -40,13 +40,12 @@ public class MainController {
             @RequestBody PlaylistDTO playlistDTO,
             @RequestHeader("Authorization") String accessToken,
             @RequestHeader("UserId") String userId) throws IOException {
-
         if (playlistDTO.getNameOfPlaylist().equals("test")) {
             return "38mJZ8lgs9au7jSqbv6EJZ";
         }
         String newPlaylistId = createNewPlaylist(accessToken, playlistDTO.getNameOfPlaylist(), "", userId);
         List<String> tracksToAdd = trackDao.getTrackIds(playlistDTO.getAlbumsToAdd(), playlistDTO.getPlaylistsToAdd(),
-                playlistDTO.isAddLikedSongs(), userId);
+                playlistDTO.isAddLikedSongs(), playlistDTO.getMinTempo(), playlistDTO.getMaxTempo(), userId);
         System.out.println(tracksToAdd.size());
         addTrackItemsToPlaylist(accessToken, newPlaylistId, tracksToAdd, userId);
         return newPlaylistId;
@@ -93,6 +92,16 @@ public class MainController {
         }
         userDao.updateDataPulled(TableType.ALBUM, true, userId);
         return albumDao.getAlbums(userId);
+    }
+
+    @GetMapping("/tracks/max")
+    public double getMaxTempoOfTracks(@RequestHeader("UserId") String userId) {
+        return trackDao.getMaxTempoOfTracks(userId);
+    }
+
+    @GetMapping("/tracks/min")
+    public double getMinTempoOfTracks(@RequestHeader("UserId") String userId) {
+        return trackDao.getMinTempoOfTracks(userId);
     }
 
     @GetMapping("/compileTracks")
