@@ -213,7 +213,6 @@ public class MainController {
         }
     }
 
-
     public void compileTrackFeatures(String accessToken, String userId) throws IOException {
         List<String> allTrackIds = trackDao.getTrackIds(userId);
         String[] queryStringParams = compileAudioFeatureQSParams(allTrackIds);
