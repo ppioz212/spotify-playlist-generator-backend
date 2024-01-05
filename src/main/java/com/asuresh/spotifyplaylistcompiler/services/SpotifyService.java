@@ -57,7 +57,7 @@ public abstract class SpotifyService {
         final ClientConfig config;
         Reader reader = Files.newBufferedReader(Paths.get("clientconfig.json"));
         config = gson.fromJson(reader, ClientConfig.class);
-        final String redirectUri = "http://localhost:3000";
+        final String redirectUri = "http://localhost:5173";
         String authHeader = config.getClientId() + ":" + config.getSecretClientId();
         String encodedString = Base64.getEncoder().encodeToString(authHeader.getBytes());
 
